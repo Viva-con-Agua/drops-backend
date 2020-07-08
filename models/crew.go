@@ -1,19 +1,41 @@
 package models
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type (
 	CrewCreate struct {
-		Name   LoginInfo `json:"loginInfo" validate:"required"`
-		Cities []City    `json:"cities" validate:"required"`
+		Name   string `json:"loginInfo" validate:"required"`
+		Cities []City `json:"cities" validate:"required"`
 	}
+	CrewUpdate struct {
+		Uuid         string `json:"uuid" validate:"required"`
+		Primary      int    `json:"primary" validate:"required"`
+		Name         string `json:"name" validate:"required"`
+		Email        string `json:"email" validate:"required"`
+		Abbreviation string `json:"abbreviation" validate:"required"`
+		Cities       []City `json:"cities"`
+	}
+
 	Crew struct {
-		Uuid    string `json:"uuid" validate:"required"`
-		Name    string `json:"name" validate:"required"`
-		Cities  []City `json:"cities"`
-		Updated int    `json:"updated" validate:"required"`
-		Created int    `json:"created" validate:"required"`
+		Uuid         string `json:"uuid" validate:"required"`
+		Primary      int    `json:"primary" validate:"required"`
+		Name         string `json:"name" validate:"required"`
+		Email        string `json:"email" validate:"required"`
+		Abbreviation string `json:"abbreviation" validate:"required"`
 	}
+	CrewExtended struct {
+		Uuid         string `json:"uuid" validate:"required"`
+		Primary      int    `json:"primary" validate:"required"`
+		Name         string `json:"name" validate:"required"`
+		Email        string `json:"email" validate:"required"`
+		Abbreviation string `json:"abbreviation" validate:"required"`
+		Cities       []City `json:"cities"`
+		Updated      int    `json:"updated" validate:"required"`
+		Created      int    `json:"created" validate:"required"`
+	}
+
 	QueryCrew struct {
 		Offset string `query:"offset" default:"0"`
 		Count  string `query:"count" default:"40"`
@@ -21,10 +43,26 @@ type (
 		Sort   string `query:"sort"`
 		SortBy string `query:"sortby"`
 	}
+
+	CrewList         []Crew
+	CrewExtendedList []CrewExtended
+
 	FilterCrew struct {
 		Name string
 	}
 )
+
+func (list *CrewList) Distinct() *CrewList {
+	r := make(CrewList, 0, len(*list))
+	m := make(map[Crew]bool)
+	for _, val := range *list {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			r = append(r, val)
+		}
+	}
+	return &r
+}
 
 func (q *QueryCrew) Defaults() {
 	if q.Offset == "" {

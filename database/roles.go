@@ -68,7 +68,7 @@ func GetRolesList() (roles []models.Role, err error) {
 /**
  * select roles for an given Supporter_id
  */
-func GetRolesBySupporterId(Supporter_id int) (roles []models.Role, err error) {
+func GetRolesByProfileId(Supporter_id int) (roles []models.Role, err error) {
 	// Execute the Query
 	rows, err := utils.DB.Query("SELECT * FROM Supporter_has_Role LEFT JOIN Role ON Supporter_has_Role.Role_Id = Role.id WHERE Supporter_has_Role.Supporter_id = ?", Supporter_id)
 	if err != nil {

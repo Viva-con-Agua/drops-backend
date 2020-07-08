@@ -5,10 +5,6 @@ type (
 		Offset int
 		Count  int
 	}
-	LoginInfo struct {
-		Email    string `json:"email" validate:"required"`
-		Password string `json:"password" validate:"required"`
-	}
 	DeleteBody struct {
 		Uuid string `json:"uuid" validate:"required"`
 	}

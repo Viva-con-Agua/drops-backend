@@ -43,7 +43,7 @@ func GetCrewList(c echo.Context) (err error) {
 
 func UpdateCrew(c echo.Context) (err error) {
 	// create body as models.Crew
-	body := new(models.Crew)
+	body := new(models.CrewUpdate)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)

@@ -12,7 +12,7 @@ import (
 /**
  * select Crew
  */
-func GetCrew(search string) (Crews []models.Crew, err error) {
+func GetCrew(search string) (Crews []models.CrewExtended, err error) {
 	// execute the query
 	CrewQuery := "SELECT Crew.id, Crew.uuid, Profile.email, Profile.first_name, Profile.last_name, Crew.updated, Crew.created " +
 		"FROM Crew LEFT JOIN Profile ON Crew.id = Profile.Crew_id " +
@@ -27,7 +27,7 @@ func GetCrew(search string) (Crews []models.Crew, err error) {
 	}
 	//define variable for Crew database id
 	var id int
-	Crew := new(models.Crew)
+	Crew := new(models.CrewExtended)
 	for rows.Next() {
 		//scan row
 		err = rows.Scan(&id, &Crew.Uuid, &Crew.Name, &Crew.Updated, &Crew.Created)
@@ -56,7 +56,7 @@ func GetCrew(search string) (Crews []models.Crew, err error) {
 /**
  * select list of Crew
  */
-func GetCrewList(page *models.Page, sort string, filter *models.FilterCrew) (Crews []models.Crew, err error) {
+func GetCrewList(page *models.Page, sort string, filter *models.FilterCrew) (Crews []models.CrewExtended, err error) {
 	// execute the query
 	CrewQuery := "SELECT u.id, u.uuid, p.email, p.first_name, p.last_name, u.updated, u.created " +
 		"FROM Crew AS u LEFT JOIN Profile AS p ON u.id = p.Crew_id " +
@@ -76,7 +76,7 @@ func GetCrewList(page *models.Page, sort string, filter *models.FilterCrew) (Cre
 	// convert each row
 	for rows.Next() {
 		//create Crew
-		Crew := new(models.Crew)
+		Crew := new(models.CrewExtended)
 		//scan row and fill Crew
 		err = rows.Scan(&id, &Crew.Uuid, &Crew.Name, &Crew.Updated, &Crew.Created)
 		if err != nil {
@@ -102,7 +102,7 @@ func GetCrewList(page *models.Page, sort string, filter *models.FilterCrew) (Cre
 /**
  * update Crew
  */
-func UpdateCrew(Crew *models.Crew) (err error) {
+func UpdateCrew(Crew *models.CrewUpdate) (err error) {
 	// sgl begin
 	tx, err := utils.DB.Begin()
 	if err != nil {

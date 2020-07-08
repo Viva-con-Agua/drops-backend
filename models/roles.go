@@ -8,6 +8,14 @@ import (
 )
 
 type (
+	CrewRoleList []CrewRole
+
+	CrewRole struct {
+		Uuid string `json:"crew_uuid" validate:"required"`
+		Crew string `json:"crew_name" validate:"required"`
+		Role string `json:"role" validate:"required"`
+	}
+
 	RoleCreate struct {
 		Name   string `json:"name" validate:"required"`
 		Pillar string `json:"pillar" validate:"required"`
@@ -21,6 +29,28 @@ type (
 		Role []Role
 	}
 )
+
+func (list *CrewRoleList) Distinct() *CrewRoleList {
+	r := make(CrewRoleList, 0, len(*list))
+	m := make(map[CrewRole]bool)
+	for _, val := range *list {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			r = append(r, val)
+		}
+	}
+	return &r
+}
+
+func (list *CrewRoleList) NotEmpty() *CrewRoleList {
+	r := make(CrewRoleList, 0, len(*list))
+	for _, val := range *list {
+		if val.Role != "" {
+			r = append(r, val)
+		}
+	}
+	return &r
+}
 
 func (roles *Roles) AddRole(role Role) []Role {
 	roles.Role = append(roles.Role, role)
