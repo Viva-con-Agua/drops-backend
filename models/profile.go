@@ -99,7 +99,6 @@ type (
 		Offset string `query:"offset" default:"0"`
 		Count  string `query:"count" default:"40"`
 		Email  string `query:"email" default:"%"`
-		// TODO FILTER FOR NAME AND AGE/GENDER?
 		Sort   string `query:"sort"`
 		SortBy string `query:"sortby"`
 	}

@@ -93,5 +93,8 @@ func main() {
     // TODO: ADD NVM_STATE
     // TODO V2: Permission assignment
 
+    // TODO: ADD ROUTES FOR ASP ASSIGNMENT
+    // TODO: ADD ROUTES FOR AVATARS
+
     e.Logger.Fatal(e.Start(":1323"))
 }

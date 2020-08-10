@@ -74,6 +74,7 @@ type (
 		ProfileId string `json:"profile_id" validate:"required"`
 		CrewId    string `json:"crew_id" validate:"required"`
 	}
+
 	QueryCrew struct {
 		Offset string `query:"offset" default:"0"`
 		Count  string `query:"count" default:"40"`

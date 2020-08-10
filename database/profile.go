@@ -231,6 +231,7 @@ func DeleteProfile(deleteBody *models.DeleteBody) (err error) {
 		log.Print("Database Error: ", err)
 		return err
 	}
+
 	// select id
 	rows, err := tx.Query("SELECT id FROM profile WHERE uuid = ?", deleteBody.Uuid)
 	if err != nil {
@@ -353,7 +354,6 @@ func SetNewsletter(Setting *models.ProfileNewsletter) (err error) {
 		log.Print("Database Error: ", err)
 		return err
 	}
-
 	return tx.Commit()
 
 }
@@ -439,5 +439,4 @@ func DeleteAvatar(deleteBody *models.DeleteBody) (err error) {
 	}
 
 	return tx.Commit()
-
 }
