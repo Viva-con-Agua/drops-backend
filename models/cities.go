@@ -1,38 +1,28 @@
 package models
 
-import (
-	"github.com/Viva-con-Agua/echo-pool/pool"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo-contrib/session"
-	"net/http"
-)
-
 type (
 	CityCreate struct {
-		Name   string `json:"name" validate:"required"`
-		Pillar string `json:"pillar" validate:"required"`
+		City     string `json:"city" validate;"required"`
+		Country  string `json:"country" validate;"required"`
+		GoogleId string `json:"google_id" validate;"required"`
 	}
 	City struct {
-		Uuid   string `json:"uuid" validate:"required"`
-		Name   string `json:"name" validate:"required"`
-		Pillar string `json:"pillar" validate:"required"`
+		Uuid     string `json:"uuid" validate:"required"`
+		City     string `json:"city" validate:"required"`
+		Country  string `json:"country" validate:"required"`
+		GoogleId string `json:"google_id" validate:"required"`
 	}
-	Citys struct {
-		City []City
-	}
+	CityList []City
 )
 
-func (Citys *Citys) AddCity(City City) []City {
-	Citys.City = append(Citys.City, City)
-	return Citys.City
-}
-
-func (r *Citys) Permission(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		sess, _ := session.Get("session", c)
-		if sess.Values["Citys"] == nil {
-			return echo.NewHTTPError(http.StatusUnauthorized, pool.Unauthorized())
+func (list *CityList) Distinct() *CityList {
+	r := make(CityList, 0, len(*list))
+	m := make(map[City]bool)
+	for _, val := range *list {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			r = append(r, val)
 		}
-		return next(c)
 	}
+	return &r
 }
