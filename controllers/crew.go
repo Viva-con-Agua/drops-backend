@@ -4,6 +4,7 @@ import (
 	"drops-backend/database"
 	"drops-backend/models"
 	"drops-backend/utils"
+	"errors"
 	"net/http"
 
 	"github.com/Viva-con-Agua/echo-pool/pool"
@@ -11,10 +12,10 @@ import (
 )
 
 /**
- * Response list of models.CrewRoleList
+ * Response list of models.Crew
  */
-func GetRolesDefaultList(c echo.Context) (err error) {
-	query := new(models.QueryRole)
+func GetCrewList(c echo.Context) (err error) {
+	query := new(models.QueryCrew)
 	if err = c.Bind(query); err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -22,16 +23,16 @@ func GetRolesDefaultList(c echo.Context) (err error) {
 	page := query.Page()
 	sort := query.OrderBy()
 	filter := query.Filter()
-	response, err := database.GetRolesDefaultList(page, sort, filter)
+	response, err := database.GetCrewList(page, sort, filter)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, pool.InternelServerError)
 	}
 	return c.JSON(http.StatusOK, response)
 }
 
-func CreateRole(c echo.Context) (err error) {
+func CreateCrew(c echo.Context) (err error) {
 	// create body as models.ProfileCreate
-	body := new(models.CrewRoleCreate)
+	body := new(models.CrewCreate)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -41,7 +42,7 @@ func CreateRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.CreateRole(body); err != nil {
+	if err = database.CreateCrew(body); err != nil {
 		if err == utils.ErrorConflict {
 			return c.JSON(http.StatusNoContent, pool.Conflict())
 		}
@@ -51,12 +52,9 @@ func CreateRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, pool.Created())
 }
 
-/**
- * Response list of models.CrewRoleList
- */
-func ReadRole(c echo.Context) (err error) {
+func ReadCrew(c echo.Context) (err error) {
 	uuid := c.Param("id")
-	response, err := database.GetRole(uuid)
+	response, err := database.GetCrew(uuid)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, pool.InternelServerError)
 	}
@@ -66,10 +64,9 @@ func ReadRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, response)
 }
 
-func UpdateRole(c echo.Context) (err error) {
-	// create body as models.Profile
-	body := new(models.CrewRoleUpdate)
-
+func UpdateCrew(c echo.Context) (err error) {
+	// create body as models.Crew
+	body := new(models.CrewUpdate)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -79,7 +76,7 @@ func UpdateRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.UpdateRole(body); err != nil {
+	if err = database.UpdateCrew(body); err != nil {
 		if err == utils.ErrorNotFound {
 			return c.JSON(http.StatusNoContent, pool.NoContent(body.Uuid))
 		}
@@ -89,8 +86,8 @@ func UpdateRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, pool.Updated(body.Uuid))
 }
 
-func DeleteRole(c echo.Context) (err error) {
-	// create body as models.DeleteBody
+func DeleteCrew(c echo.Context) (err error) {
+	// create body as models.Crew
 	body := new(models.DeleteBody)
 	// save data to body
 	if err = c.Bind(body); err != nil {
@@ -101,7 +98,7 @@ func DeleteRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.DeleteRole(body); err != nil {
+	if err = database.DeleteCrew(body); err != nil {
 		if err == utils.ErrorNotFound {
 			return c.JSON(http.StatusNoContent, pool.NoContent(body.Uuid))
 		}
@@ -111,9 +108,9 @@ func DeleteRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, pool.Deleted(body.Uuid))
 }
 
-func AssignRole(c echo.Context) (err error) {
+func AssignCrew(c echo.Context) (err error) {
 	// create body as models.ProfileCreate
-	body := new(models.AssignCrewRole)
+	body := new(models.AssignCrew)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -123,7 +120,7 @@ func AssignRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.AssignRole(body); err != nil {
+	if err = database.AssignCrew(body); err != nil {
 		if err == utils.ErrorConflict {
 			return c.JSON(http.StatusNoContent, pool.Conflict())
 		}
@@ -133,9 +130,9 @@ func AssignRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, pool.Created())
 }
 
-func RemoveRole(c echo.Context) (err error) {
-	// create body as models.DeleteBody
-	body := new(models.DeleteBody)
+func RemoveCrew(c echo.Context) (err error) {
+	// create body as models.ProfileCreate
+	body := new(models.RemoveCrew)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -145,12 +142,77 @@ func RemoveRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.RemoveRole(body); err != nil {
+	if err = database.RemoveCrew(body); err != nil {
 		if err == utils.ErrorNotFound {
-			return c.JSON(http.StatusNoContent, pool.NoContent(body.Uuid))
+			return c.JSON(http.StatusNoContent, pool.NoContent(body.ProfileId+"_"+body.CrewId))
 		}
 		return c.JSON(http.StatusInternalServerError, pool.InternelServerError())
 	}
 	// response created
-	return c.JSON(http.StatusOK, pool.Deleted(body.Uuid))
+	return c.JSON(http.StatusOK, pool.Deleted(body.ProfileId+"_"+body.CrewId))
+}
+
+/**
+ * Response list of models.CrewRoleList
+ */
+func ActiveStateChange(c echo.Context) (err error) {
+	// create body as models.ProfileProfileNewsletter
+	body := new(models.ActiveState)
+	state := c.Param("state")
+
+	// save data to body
+	if err = c.Bind(body); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	// validate body
+	if err = c.Validate(body); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	if state != "requested" && state != "active" && state != "inactive" {
+		return c.JSON(http.StatusBadRequest, errors.New("Invalid state"))
+	}
+
+	// update body into database
+	if err = database.ActiveStateChange(body, state); err != nil {
+		if err == utils.ErrorNotFound {
+			return c.JSON(http.StatusNoContent, pool.NoContent(body.ProfileId))
+		}
+		return c.JSON(http.StatusInternalServerError, pool.InternelServerError())
+	}
+	// response created
+	return c.JSON(http.StatusOK, pool.Updated(body.ProfileId))
+}
+
+/**
+ * Non voting membership
+ */
+func NVMStateChange(c echo.Context) (err error) {
+	// create body as models.ProfileProfileNewsletter
+	body := new(models.NVMState)
+	state := c.Param("state")
+
+	// save data to body
+	if err = c.Bind(body); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	// validate body
+	if err = c.Validate(body); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	if state != "active" && state != "inactive" {
+		return c.JSON(http.StatusBadRequest, errors.New("Invalid state"))
+	}
+
+	// update body into database
+	if err = database.NVMStateChange(body, state); err != nil {
+		if err == utils.ErrorNotFound {
+			return c.JSON(http.StatusNoContent, pool.NoContent(body.ProfileId))
+		}
+		return c.JSON(http.StatusInternalServerError, pool.InternelServerError())
+	}
+	// response created
+	return c.JSON(http.StatusOK, pool.Updated(body.ProfileId))
 }

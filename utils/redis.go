@@ -2,14 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-
-	"../models"
+	"github.com/Viva-con-Agua/echo-pool/pool"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/rbcervilla/redisstore"
+	"log"
+	"net/http"
 )
 
 func RedisSession() echo.MiddlewareFunc {
@@ -30,7 +29,7 @@ func SessionAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		sess, _ := session.Get("session", c)
 		if sess.Values["valid"] == nil || sess.Values["valid"] == false {
-			return echo.NewHTTPError(http.StatusUnauthorized, models.Unauthorized())
+			return echo.NewHTTPError(http.StatusUnauthorized, pool.Unauthorized())
 		}
 		return next(c)
 	}

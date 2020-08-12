@@ -11,10 +11,10 @@ import (
 )
 
 /**
- * Response list of models.CrewRoleList
+ * Response list of models.AddressList
  */
-func GetRolesDefaultList(c echo.Context) (err error) {
-	query := new(models.QueryRole)
+func GetAddressDefaultList(c echo.Context) (err error) {
+	query := new(models.QueryAddress)
 	if err = c.Bind(query); err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -22,16 +22,16 @@ func GetRolesDefaultList(c echo.Context) (err error) {
 	page := query.Page()
 	sort := query.OrderBy()
 	filter := query.Filter()
-	response, err := database.GetRolesDefaultList(page, sort, filter)
+	response, err := database.GetAddressDefaultList(page, sort, filter)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, pool.InternelServerError)
 	}
 	return c.JSON(http.StatusOK, response)
 }
 
-func CreateRole(c echo.Context) (err error) {
+func CreateAddress(c echo.Context) (err error) {
 	// create body as models.ProfileCreate
-	body := new(models.CrewRoleCreate)
+	body := new(models.AddressCreate)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -41,7 +41,7 @@ func CreateRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.CreateRole(body); err != nil {
+	if err = database.CreateAddress(body); err != nil {
 		if err == utils.ErrorConflict {
 			return c.JSON(http.StatusNoContent, pool.Conflict())
 		}
@@ -52,11 +52,11 @@ func CreateRole(c echo.Context) (err error) {
 }
 
 /**
- * Response list of models.CrewRoleList
+ * Response list of models.Address
  */
-func ReadRole(c echo.Context) (err error) {
+func ReadAddress(c echo.Context) (err error) {
 	uuid := c.Param("id")
-	response, err := database.GetRole(uuid)
+	response, err := database.GetAddress(uuid)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, pool.InternelServerError)
 	}
@@ -66,9 +66,9 @@ func ReadRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, response)
 }
 
-func UpdateRole(c echo.Context) (err error) {
+func UpdateAddress(c echo.Context) (err error) {
 	// create body as models.Profile
-	body := new(models.CrewRoleUpdate)
+	body := new(models.AddressUpdate)
 
 	// save data to body
 	if err = c.Bind(body); err != nil {
@@ -79,7 +79,7 @@ func UpdateRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.UpdateRole(body); err != nil {
+	if err = database.UpdateAddress(body); err != nil {
 		if err == utils.ErrorNotFound {
 			return c.JSON(http.StatusNoContent, pool.NoContent(body.Uuid))
 		}
@@ -89,7 +89,7 @@ func UpdateRole(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, pool.Updated(body.Uuid))
 }
 
-func DeleteRole(c echo.Context) (err error) {
+func DeleteAddress(c echo.Context) (err error) {
 	// create body as models.DeleteBody
 	body := new(models.DeleteBody)
 	// save data to body
@@ -101,51 +101,7 @@ func DeleteRole(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// update body into database
-	if err = database.DeleteRole(body); err != nil {
-		if err == utils.ErrorNotFound {
-			return c.JSON(http.StatusNoContent, pool.NoContent(body.Uuid))
-		}
-		return c.JSON(http.StatusInternalServerError, pool.InternelServerError())
-	}
-	// response created
-	return c.JSON(http.StatusOK, pool.Deleted(body.Uuid))
-}
-
-func AssignRole(c echo.Context) (err error) {
-	// create body as models.ProfileCreate
-	body := new(models.AssignCrewRole)
-	// save data to body
-	if err = c.Bind(body); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	// validate body
-	if err = c.Validate(body); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	// update body into database
-	if err = database.AssignRole(body); err != nil {
-		if err == utils.ErrorConflict {
-			return c.JSON(http.StatusNoContent, pool.Conflict())
-		}
-		return c.JSON(http.StatusInternalServerError, pool.InternelServerError())
-	}
-	// response created
-	return c.JSON(http.StatusOK, pool.Created())
-}
-
-func RemoveRole(c echo.Context) (err error) {
-	// create body as models.DeleteBody
-	body := new(models.DeleteBody)
-	// save data to body
-	if err = c.Bind(body); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	// validate body
-	if err = c.Validate(body); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	// update body into database
-	if err = database.RemoveRole(body); err != nil {
+	if err = database.DeleteAddress(body); err != nil {
 		if err == utils.ErrorNotFound {
 			return c.JSON(http.StatusNoContent, pool.NoContent(body.Uuid))
 		}
