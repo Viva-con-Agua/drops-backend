@@ -1,13 +1,14 @@
 package database
 
 import (
-	"../models"
-	"../utils"
+	"drops-backend/models"
+	"drops-backend/utils"
 	"encoding/json"
-	"github.com/google/uuid"
 	"log"
 	"mime/multipart"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 /**

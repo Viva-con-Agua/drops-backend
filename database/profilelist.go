@@ -1,8 +1,8 @@
 package database
 
 import (
-	"../models"
-	"../utils"
+	"drops-backend/models"
+	"drops-backend/utils"
 	"encoding/json"
 	"log"
 )

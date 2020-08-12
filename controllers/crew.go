@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"../database"
-	"../models"
-	"../utils"
+	"drops-backend/database"
+	"drops-backend/models"
+	"drops-backend/utils"
 	"errors"
+	"net/http"
+
 	"github.com/Viva-con-Agua/echo-pool/pool"
 	"github.com/labstack/echo"
-	"net/http"
 )
 
 /**

@@ -1,13 +1,14 @@
 package database
 
 import (
-	"../models"
-	"../utils"
+	"drops-backend/models"
+	"drops-backend/utils"
 	"encoding/json"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
 	"log"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 )
 
 /**
