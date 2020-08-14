@@ -6,6 +6,19 @@ import (
 )
 
 type (
+	Profile struct {
+		Uuid      string    `json:"uuid" validate:"required"`
+		Avatar    Avatar    `json:"avatar" validate:"required"`
+		FirstName string    `json:"first_name" validate:"required"`
+		LastName  string    `json:"last_name" validate:"required"`
+		FullName  string    `json:"full_name" validate:"required"`
+		Mobile    string    `json:"mobile_phone" validate:"required"`
+		Birthdate int       `json:"birthdate" validate:"required"`
+		Gender    string    `json:"gender" validate:"required"`
+		Addresses []Address `json:"addresses" validate:"required"`
+		Updated   int       `json:"updated" validate:"required"`
+		Created   int       `json:"created" validate:"required"`
+	}
 	ProfileCreate struct {
 		Email     string `json:"email" validate:"required"`
 		FirstName string `json:"first_name" validate:"required"`
@@ -65,7 +78,6 @@ type (
 		Mobile     string        `json:"mobile_phone" validate:"required"`
 		Birthdate  int           `json:"birthdate" validate:"required"`
 		Gender     string        `json:"gender" validate:"required"`
-		Crews      []Crew        `json:"crews" validate:"required"`
 		Addresses  []Address     `json:"addresses" validate:"required"`
 		Roles      []ProfileRole `json:"roles" validate:"required"`
 		Newsletter string        `json:"newsletter" validate:"required"`

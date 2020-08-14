@@ -1,9 +1,0 @@
-db:
-  host: 172.2.80.6
-  user: drops
-  password: drops
-  port: 3306
-  name: drops
-redis:
-  host: 172.2.60.3
-  port: 6379
