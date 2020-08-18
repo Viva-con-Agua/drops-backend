@@ -1,5 +1,5 @@
 db:
-  host: 172.2.80.8
+  host: 172.2.80.5
   user: drops
   password: drops
   port: 3306
