@@ -12,8 +12,7 @@ type (
 	}
 	AccessCreate struct {
 		Assign    string `json:"assign"`
-		RoleUuid  string `json:"role_uuid" validate:"required"`
+		Name      string `json:"name"`
 		ModelUuid string `json:"model_uuid"`
-		ModelName string `json:"model_name"`
 	}
 )

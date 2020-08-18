@@ -27,21 +27,21 @@ func AccessInsert(assign *models.AccessCreate) (err error) {
 			return err
 		}
 	}
-	// select role_id from database
-	rows2, err := utils.DB.Query("SELECT id FROM role WHERE uuid = ?", assign.RoleUuid)
+	rows, err = utils.DB.Query("SELECT id FROM model WHERE uuid = ?", assign.ModelUuid)
 	if err != nil {
 		log.Print("Database Error", err)
 		return err
 	}
-	//select user_id from rows
-	var roleId int
-	for rows2.Next() {
-		err = rows2.Scan(&roleId)
+	// select user_id from rows
+	var modelId int
+	for rows.Next() {
+		err = rows.Scan(&modelId)
 		if err != nil {
 			log.Print("Database Error: ", err)
 			return err
 		}
 	}
+
 	// begin database query and handle error
 	tx, err := utils.DB.Begin()
 	if err != nil {
@@ -54,27 +54,16 @@ func AccessInsert(assign *models.AccessCreate) (err error) {
 		log.Print("Database Error: ", err)
 		return err
 	}
-
-	res, err := tx.Exec("INSERT INTO access_user (uuid, pool_user_id, role_Id) VALUES(?, ?, ?)", Uuid, userId, roleId)
+	_, err = tx.Exec("INSERT INTO access_user (uuid, name, created, vca_user_id, model_id) VALUES(?, ?, ?, ?, ?)",
+		Uuid,
+		assign.Name,
+		userId,
+		modelId,
+	)
 	if err != nil {
 		tx.Rollback()
 		log.Print("Database Error: ", err)
 		return err
-	}
-
-	if assign.ModelUuid != "" && assign.ModelName != "" {
-		// get user id via LastInsertId
-		id, err := res.LastInsertId()
-		if err != nil {
-			log.Print("Database Error: ", err)
-			return err
-		}
-		_, err = tx.Exec("INSERT INTO model (uuid, name, access_user_id) VALUES(?, ?, ?)", assign.ModelUuid, assign.ModelName, id)
-		if err != nil {
-			tx.Rollback()
-			log.Print("Database Error: ", err)
-			return err
-		}
 	}
 	return tx.Commit()
 }
