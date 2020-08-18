@@ -1,6 +1,9 @@
 FROM golang
 
 
+WORKDIR /go/src/drops-backend
+
+ADD . /go/src/drops-backend
 RUN go get github.com/labstack/echo-contrib/session/...
 RUN go get github.com/go-playground/validator/...
 RUN go get github.com/labstack/echo/...
@@ -9,8 +12,5 @@ RUN go get github.com/go-sql-driver/mysql
 RUN go get github.com/jinzhu/configor/... 
 RUN go get github.com/google/uuid/...
 
-WORKDIR /app
-
-ADD . /app
 
 CMD ["go", "run", "server.go"]
