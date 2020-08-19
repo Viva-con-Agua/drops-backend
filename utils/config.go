@@ -17,6 +17,7 @@ var (
 			Host string `required:"true"`
 			Port int    `default:"6379"`
 		}
+		Alloworigins []string
 	}{}
 )
 

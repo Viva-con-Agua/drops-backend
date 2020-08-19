@@ -9,6 +9,7 @@ import (
 	"github.com/Viva-con-Agua/echo-pool/config"
 	"github.com/go-playground/validator"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type (
@@ -31,6 +32,12 @@ func main() {
 	nats.Connect()
 	//create echo server
 	e := echo.New()
+	m := middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     utils.Config.Alloworigins,
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		AllowCredentials: true,
+	})
+	e.Use(m)
 	e.Use(store)
 	e.Validator = &CustomValidator{validator: validator.New()}
 
