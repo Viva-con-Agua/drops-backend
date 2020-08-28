@@ -32,6 +32,21 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 			return nil, nil, err
 		}
 	}
+	// get model_id
+	rows, err = utils.DB.Query("SELECT m.id FROM model As m JOIN service AS s ON m.service_id = s.id WHERE m.name='default' && s.name='drops-backend'")
+	if err != nil {
+		log.Print(err, " ### database.SignUp Step_1")
+		return nil, nil, err
+	}
+	// select model_id from rows
+	var drops_id int
+	for rows.Next() {
+		err = rows.Scan(&drops_id)
+		if err != nil {
+			log.Print(err, " ### database.SignUp Step_2")
+			return nil, nil, err
+		}
+	}
 	// begin database query and handle error
 	tx, err := utils.DB.Begin()
 	if err != nil {
@@ -100,12 +115,12 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 		return nil, nil, err
 	}
 	// Create uuid
-	access_uuid := uuid.New()
+	default_access_uuid := uuid.New()
 	_, err = tx.Exec("INSERT INTO access_user (uuid, name, created, model_id, vca_user_id ) VALUES(?, ?, ?, ?, ?)",
-		access_uuid,
-		"join",
+		default_access_uuid,
+		"joined",
 		time.Now().Unix(),
-		model_id,
+		drops_id,
 		id,
 	)
 	if err != nil {
@@ -113,12 +128,27 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 		log.Print(err, " ### database.SignUp Step_8")
 		return nil, nil, err
 	}
+	access_uuid := uuid.New()
+	if model_id != 0 {
+		_, err = tx.Exec("INSERT INTO access_user (uuid, name, created, model_id, vca_user_id ) VALUES(?, ?, ?, ?, ?)",
+			access_uuid,
+			"join",
+			time.Now().Unix(),
+			model_id,
+			id,
+		)
+		if err != nil {
+			tx.Rollback()
+			log.Print(err, " ### database.SignUp Step_9")
+			return nil, nil, err
+		}
+	}
 
 	//insert access_token
 	token, err := utils.RandomBase64(32)
 	if err != nil {
 		tx.Rollback()
-		log.Print(err, " ### database.SignUp Step_9")
+		log.Print(err, " ### database.SignUp Step_10")
 		return nil, nil, err
 	}
 	res, err = tx.Exec(
@@ -132,7 +162,7 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 	)
 	if err != nil {
 		tx.Rollback()
-		log.Print(err, " ### database.SignUp Step_10")
+		log.Print(err, " ### database.SignUp Step_11")
 		return nil, nil, err
 	}
 

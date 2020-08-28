@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var DB = new(sql.DB)
@@ -21,11 +23,11 @@ func ConnectDatabase() {
 	mysqlInfo := user + ":" + password + "@tcp(" + host + ":" + strconv.Itoa(port) + ")/" + name
 	DB, err = sql.Open("mysql", mysqlInfo)
 	if err != nil {
-		log.Fatal("database connection failed", err)
+		log.Fatal(err, " ### utils.ConnectDatabase Step_1")
 	}
 	err = DB.Ping()
 	if err != nil {
-		log.Fatal("database connection failed", err)
+		log.Fatal(err, " ### utils.ConnectDatabase Step_2")
 	}
 	fmt.Println("Database successfully connected!")
 	//	query, err := ioutil.ReadFile("drops-database.sql")

@@ -5,6 +5,7 @@ import (
 	"drops-backend/models"
 	"drops-backend/nats"
 	"drops-backend/utils"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -41,7 +42,8 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
 	//TODO iRobert Request CrmUser
-	log.Print(body.CrmUser(*user_uuid, *access_token))
+
+	log.Print(json.Marshal(body.CrmUserSignUp(*user_uuid, *access_token)))
 
 	auth.SetSession(c, user, &auth.AccessToken{AccessToken: "null"})
 	// response created
