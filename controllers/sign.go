@@ -7,7 +7,6 @@ import (
 	"drops-backend/utils"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/Viva-con-Agua/echo-pool/auth"
 	"github.com/Viva-con-Agua/echo-pool/resp"
@@ -25,32 +24,47 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// insert body into database
-	access_token, err := database.SignUp(body)
+	user_uuid, access_token, err := database.SignUp(body)
 	if err != nil {
-		if strings.Contains(err.Error(), "Duplicate entry") {
+		if err == utils.ErrorConflict {
 			return c.JSON(http.StatusConflict, resp.Conflict())
 		}
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
+	/** outdated because of civi mailing
 	mail := models.MailInfo{To: body.Email, Token: *access_token, Template: "default"}
 	log.Print(mail)
 	nats.PublishToken(&mail)
+	**/
+	user, err := database.GetSessionUser(user_uuid)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
+	}
+	//TODO iRobert Request CrmUser
+	log.Print(body.CrmUser(*user_uuid, *access_token))
+
+	auth.SetSession(c, user, &auth.AccessToken{AccessToken: "null"})
 	// response created
-	return c.JSON(http.StatusCreated, resp.Created())
+	return c.JSON(http.StatusCreated, user)
 }
 
 func ConfirmSignUp(c echo.Context) (err error) {
 	token := c.Param("token")
-	err = database.ConfirmSignUp(token)
+	user_uuid, err := database.ConfirmSignUp(token)
 	if err != nil {
 		if err == utils.ErrorNotFound {
 			return c.JSON(http.StatusNotFound, resp.NoContent(token))
 		}
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
-	response := new(resp.ResponseMessage)
-	response.Message = "Successful Confirmed"
-	return c.JSON(http.StatusOK, response)
+	user, err := database.GetSessionUser(user_uuid)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
+	}
+	auth.SetSession(c, user, &auth.AccessToken{AccessToken: "null"})
+
+	//TODO iRobert Request   Activity: Confirmed Account
+	return c.JSON(http.StatusOK, user)
 }
 
 func SignUpToken(c echo.Context) (err error) {
@@ -110,9 +124,6 @@ func Current(c echo.Context) (err error) {
 	}
 	if user == nil {
 		return c.JSON(http.StatusUnauthorized, &resp.ResponseMessage{Message: "No user sign in"})
-	}
-	if user.Confirmed == 0 {
-		return c.JSON(http.StatusForbidden, &resp.ResponseMessage{Message: "Not confirmed"})
 	}
 	return c.JSON(http.StatusOK, user)
 }

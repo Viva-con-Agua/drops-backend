@@ -30,6 +30,7 @@ func main() {
 	utils.ConnectDatabase()
 	store := auth.RedisSession()
 	nats.Connect()
+	controllers.AddEssential()
 	//create echo server
 	e := echo.New()
 	m := middleware.CORSWithConfig(middleware.CORSConfig{
@@ -66,6 +67,24 @@ func main() {
 	// "v1/models"
 	apiV1.POST("/models", controllers.ModelInsert)
 	apiV1.DELETE("/models", controllers.ModelDelete)
+
+	apiAdmin := e.Group("/admin")
+
+	apiAdmin.GET("/services", controllers.ServiceList)
+	apiAdmin.POST("/services", controllers.ServiceInsert)
+
+	apiAdmin.GET("/users/:uuid", controllers.UserById)
+	apiAdmin.GET("/users", controllers.UserList)
+	apiAdmin.PUT("/users", controllers.UserUpdate)
+	apiAdmin.DELETE("/users", controllers.UserDelete)
+
+	// "/v1/access"
+	apiAdmin.POST("/access", controllers.AccessInsert)
+	apiAdmin.DELETE("/access", controllers.AccessDelete)
+
+	// "v1/models"
+	apiAdmin.POST("/models", controllers.ModelInsert)
+	apiAdmin.DELETE("/models", controllers.ModelDelete)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }

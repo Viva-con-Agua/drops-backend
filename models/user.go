@@ -6,10 +6,14 @@ type (
 		Password string `json:"password" validate:"required"`
 	}
 	SignUpData struct {
-		Email     string `json:"email" validate:"required"`
-		Password  string `json:"password" validate:"required"`
-		FirstName string `json:"first_name" validate:"required"`
-		LastName  string `json:"last_name" validate:"required"`
+		Email       string       `json:"email" validate:"required"`
+		Password    string       `json:"password" validate:"required"`
+		FirstName   string       `json:"first_name" validate:"required"`
+		LastName    string       `json:"last_name" validate:"required"`
+		ServiceName string       `json:"service_name" validate:"required"`
+		RedirectUrl string       `json:"redirect_url" validate:"required"`
+		Kampagne    int          `json:"kampagne" validate:"required"`
+		Offset      SignUpOffset `json:"offset" validate:"required"`
 	}
 
 	NewToken struct {
@@ -40,8 +44,35 @@ type (
 	UserFilter struct {
 		Email string
 	}
+	SignUpOffset struct {
+		KnownFrom string `json:"known_from" validate:"required"`
+	}
+	Mail struct {
+		Token string `json:"token" validate:"required"`
+	}
+	CrmUser struct {
+		Uuid      string       `json:"drops_id" validate:"required"`
+		Email     string       `json:"email" validate:"required"`
+		FirstName string       `json:"first_name" validate:"required"`
+		LastName  string       `json:"last_name" validate:"required"`
+		Kampagne  int          `json:"kampagne" validate:"required"`
+		Mail      Mail         `json:"mail" validate:"required"`
+		Offset    SignUpOffset `json:"offset" validate:"required"`
+	}
 )
 
+func (signup_data *SignUpData) CrmUser(drops_id string, token string) *CrmUser {
+	crm_user := new(CrmUser)
+	crm_user.Uuid = drops_id
+	crm_user.Email = signup_data.Email
+	crm_user.FirstName = signup_data.FirstName
+	crm_user.LastName = signup_data.LastName
+	crm_user.Kampagne = signup_data.Kampagne
+	crm_user.Mail.Token = token
+	crm_user.Offset = signup_data.Offset
+	return crm_user
+
+}
 func (q *UserQuery) Page() *Page {
 	//create new Page
 	page := new(Page)

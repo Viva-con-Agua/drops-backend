@@ -44,7 +44,7 @@ func UserById(c echo.Context) (err error) {
 		}
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
-	return c.JSON(http.StatusOK, response[0])
+	return c.JSON(http.StatusOK, response)
 }
 
 /**

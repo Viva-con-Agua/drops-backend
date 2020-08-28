@@ -7,7 +7,7 @@ import (
 )
 
 func SubscribeAddModel() {
-	_, err := Nats.Subscribe("drops.model.add", func(a *models.ModelStub) {
+	_, err := Nats.Subscribe("drops.model.add", func(a *models.ModelCreate) {
 		err := database.ModelInsert(a)
 		if err != nil {
 			log.Print("Database Error: ", err)

@@ -11,11 +11,11 @@ import (
 /**
  * join user and role entry via User_has_Role table
  */
-func AccessInsert(assign *models.AccessCreate) (err error) {
-	// select user_id from database
-	rows, err := utils.DB.Query("SELECT id FROM vca_user WHERE uuid = ?", assign.Assign)
+
+func AccessInsertDefault(access_default *models.AccessDefault) (err error) {
+	rows, err := utils.DB.Query("SELECT id FROM vca_user WHERE uuid = ?", access_default.UserUuid)
 	if err != nil {
-		log.Print("Database Error", err)
+		log.Print("Error: database.AccessInsertDefault Step_1 ### ", err)
 		return err
 	}
 	// select user_id from rows
@@ -23,7 +23,62 @@ func AccessInsert(assign *models.AccessCreate) (err error) {
 	for rows.Next() {
 		err = rows.Scan(&userId)
 		if err != nil {
+			log.Print("Error: database.AccessInsertDefault Step_2 ### ", err)
+			return err
+		}
+	}
+	rows, err = utils.DB.Query("SELECT id FROM model As m JOIN service AS s WHERE m.name = ? AND s.name = ?", "default", access_default.ServiceName)
+	if err != nil {
+		log.Print("Error: database.AccessInsertDefault Step", err)
+		return err
+	}
+	// select user_id from rows
+	var modelId int
+	for rows.Next() {
+		err = rows.Scan(&modelId)
+		if err != nil {
 			log.Print("Database Error: ", err)
+			return err
+		}
+	}
+	// begin database query and handle error
+	tx, err := utils.DB.Begin()
+	if err != nil {
+		log.Print("Database Error: ", err)
+		return err
+	}
+	// Create uuid
+	Uuid, err := uuid.NewRandom()
+	if err != nil {
+		log.Print("Database Error: ", err)
+		return err
+	}
+	_, err = tx.Exec("INSERT INTO access_user (uuid, name, created, vca_user_id, model_id) VALUES(?, ?, ?, ?, ?)",
+		Uuid,
+		access_default.AccessType,
+		userId,
+		modelId,
+	)
+	if err != nil {
+		tx.Rollback()
+		log.Print("Database Error: ", err)
+		return err
+	}
+	return tx.Commit()
+}
+func AccessInsert(assign *models.AccessCreate) (err error) {
+	// select user_id from database
+	rows, err := utils.DB.Query("SELECT id FROM vca_user WHERE uuid = ?", assign.Assign)
+	if err != nil {
+		log.Print("Error: database.AccessInsert Step_1 ### ", err)
+		return err
+	}
+	// select user_id from rows
+	var userId int
+	for rows.Next() {
+		err = rows.Scan(&userId)
+		if err != nil {
+			log.Print("Error: database.AccessInsert Step_2 ### ", err)
 			return err
 		}
 	}

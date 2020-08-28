@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func ModelInsert(m *models.ModelStub) (err error) {
+func ModelInsert(m *models.ModelCreate) (err error) {
 
 	tx, err := utils.DB.Begin()
 	if err != nil {

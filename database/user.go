@@ -10,20 +10,12 @@ import (
 	"drops-backend/models"
 	"drops-backend/utils"
 
+	"github.com/Viva-con-Agua/echo-pool/auth"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-/*var UserQuery = "SELECT u.id, u.uuid, c.email, u.first_name, u.last_name, u.updated, u.created, CONCAT('[', " +
-"GROUP_CONCAT(JSON_OBJECT('uuid', a.uuid, 'role_uuid', r.uuid, 'role_name', r.name, 'service_name', r.service_name, " +
-"'model_uuid', m.uuid, 'model_name', m.name, 'created', a.created)), ']') " +
-"FROM pool_user AS u " +
-"LEFT JOIN credentials AS c ON u.id = c.pool_user_id " +
-"LEFT JOIN access_user AS a ON u.id = a.pool_user_id " +
-"LEFT JOIN model AS m ON a.id = m.access_user_id " +
-"LEFT JOIN role AS r ON a.role_id = r.id "*/
-
 var UserQuery = "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created, " +
-	"p.uuid, p.first_name, p.last_name, ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
+	"p.uuid, p.first_name, p.last_name, CONCAT(p.first_name, ' ', p.last_name), ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
 	"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 	"'uuid', ad.uuid, " +
 	"'street', ad.street, " +
@@ -35,9 +27,9 @@ var UserQuery = "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created
 	"'created', ad.created)), " +
 	"']'), " +
 	"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
-	"'uuid', a.uuid, " +
+	"'access_uuid', a.uuid, " +
 	"'access_name', a.name, " +
-	"'service_name', m.service_name, " +
+	"'service_name', sc.name, " +
 	"'model_uuid', m.uuid, " +
 	"'model_name', m.name, " +
 	"'model_type', m.type, " +
@@ -47,12 +39,13 @@ var UserQuery = "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created
 	"LEFT JOIN profile AS p ON p.vca_user_id = u.id " +
 	"LEFT JOIN address AS ad ON ad.profile_id = p.id " +
 	"LEFT JOIN access_user AS a ON u.id = a.vca_user_id " +
-	"LEFT JOIN model AS m ON a.model_id = m.id "
+	"LEFT JOIN model AS m ON a.model_id = m.id " +
+	"LEFT JOIN service AS sc ON m.service_id = sc.id "
 
 /**
  * GET /users
  */
-func UserList(page *models.Page, sort string, filter *models.UserFilter) (users []models.User, err error) {
+func UserList(page *models.Page, sort string, filter *models.UserFilter) (users []auth.User, err error) {
 	// define the query
 	query := UserQuery +
 		"GROUP BY u.id, p.uuid " +
@@ -66,15 +59,15 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 		return nil, err
 	}
 
-	//initial dummy varibles
+	//initial varibles
 	var accessByte []byte
 	var addressByte []byte
 	var id int
 	// create User and AccessUser
-	user := new(models.User)
-	profile := new(models.Profile)
-	access := new([]models.Access)
-	address := new([]models.Address) // convert each row to User
+	user := new(auth.User)
+	profile := new(auth.Profile)
+	access := new(models.AccessDBList)
+	address := new([]auth.Address)
 	for rows.Next() {
 		//scan row and fill user
 		err = rows.Scan(&id, &user.Uuid, &user.Email, &user.Confirmed, &user.Updated, &user.Created,
@@ -99,10 +92,8 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 			log.Print("Database Error: ", err)
 			return nil, err
 		}
-		if (*access)[0].Uuid != "" {
 
-			user.Access = *access
-		}
+		user.Access = *access.AccessList()
 		// create json from []byte
 		err = json.Unmarshal(addressByte, &address)
 
@@ -124,7 +115,7 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 /**
  * GET /users/:id
  */
-func UserById(search string) (users []models.User, err error) {
+func UserById(search string) (users *auth.User, err error) {
 	// execute the query
 	userQuery := UserQuery +
 		"WHERE u.uuid = ? " +
@@ -140,10 +131,10 @@ func UserById(search string) (users []models.User, err error) {
 	var addressByte []byte
 	var id int
 	// create User and AccessUser
-	user := new(models.User)
-	profile := new(models.Profile)
-	access := new([]models.Access)
-	address := new([]models.Address) // convert each row to User
+	user := new(auth.User)
+	profile := new(auth.Profile)
+	access := new(models.AccessDBList)
+	address := new([]auth.Address) // convert each row to User
 
 	// convert each row to User
 	for rows.Next() {
@@ -152,6 +143,7 @@ func UserById(search string) (users []models.User, err error) {
 			&profile.Uuid,
 			&profile.FirstName,
 			&profile.LastName,
+			&profile.FullName,
 			&profile.Mobile,
 			&profile.Birthdate,
 			&profile.Gender,
@@ -170,10 +162,8 @@ func UserById(search string) (users []models.User, err error) {
 			log.Print("Database Error: ", err)
 			return nil, err
 		}
-		if (*access)[0].Uuid != "" {
 
-			user.Access = *access
-		}
+		user.Access = *access.AccessList()
 		// create json from []byte
 		err = json.Unmarshal(addressByte, &address)
 
@@ -185,14 +175,13 @@ func UserById(search string) (users []models.User, err error) {
 			user.Profile.Addresses = *address
 		}
 		user.Profile = *profile
-		users = append(users, *user)
 	}
 
 	if id == 0 {
 		err = utils.ErrorNotFound
 		return nil, err
 	}
-	return users, err
+	return user, err
 }
 
 /**

@@ -10,7 +10,7 @@ type (
 		Owner       string `json:"owner" validate:"required"`
 		Created     string `json:"created" validate:"required"`
 	}
-	ModelStub struct {
+	ModelCreate struct {
 		Uuid        string `json:"uuid" validate:"required"`
 		Type        string `json:"type" validate:"required"`
 		Name        string `json:"name" validate:"required"`

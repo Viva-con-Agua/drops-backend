@@ -11,7 +11,7 @@ import (
 )
 
 func ModelInsert(c echo.Context) (err error) {
-	body := new(models.ModelStub)
+	body := new(models.ModelCreate)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
