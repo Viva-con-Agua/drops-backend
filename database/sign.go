@@ -17,36 +17,22 @@ import (
  * TODO more than on service assign
  */
 func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *string, err error) {
-	// get model_id
-	rows, err := utils.DB.Query("SELECT m.id FROM model As m JOIN service AS s ON m.service_id = s.id WHERE m.name='default' && s.name=?", signup_data.ServiceName)
+	// select service
+	rows, err := utils.DB.Query("SELECT s.id FROM service As s WHERE s.name='drops-backend'")
 	if err != nil {
 		log.Print(err, " ### database.SignUp Step_1")
 		return nil, nil, err
 	}
 	// select model_id from rows
-	var model_id int
+	var service_id int
 	for rows.Next() {
-		err = rows.Scan(&model_id)
+		err = rows.Scan(&service_id)
 		if err != nil {
 			log.Print(err, " ### database.SignUp Step_2")
 			return nil, nil, err
 		}
 	}
-	// get model_id
-	rows, err = utils.DB.Query("SELECT m.id FROM model As m JOIN service AS s ON m.service_id = s.id WHERE m.name='default' && s.name='drops-backend'")
-	if err != nil {
-		log.Print(err, " ### database.SignUp Step_1")
-		return nil, nil, err
-	}
-	// select model_id from rows
-	var drops_id int
-	for rows.Next() {
-		err = rows.Scan(&drops_id)
-		if err != nil {
-			log.Print(err, " ### database.SignUp Step_2")
-			return nil, nil, err
-		}
-	}
+
 	// begin database query and handle error
 	tx, err := utils.DB.Begin()
 	if err != nil {
@@ -56,9 +42,9 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 	//insert user
 	u_uuid := uuid.New().String()
 	res, err := tx.Exec(
-		"INSERT INTO vca_user (uuid, email, confirmed, updated, created) VALUES(?, ?, ?, ?, ?)",
+		"INSERT INTO drops_user (uuid, email, confirmed, updated, created) VALUES(?, ?, ?, ?, ?)",
 		u_uuid,
-		signup_data.Email,
+		signup_data.SignUpUser.Email,
 		0,
 		time.Now().Unix(),
 		time.Now().Unix(),
@@ -79,9 +65,9 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 	}
 
 	// insert credentials
-	password, err := bcrypt.GenerateFromPassword([]byte(signup_data.Password), 10)
+	password, err := bcrypt.GenerateFromPassword([]byte(signup_data.SignUpUser.Password), 10)
 	res, err = tx.Exec(
-		"INSERT INTO password_info (password, hasher, vca_user_id) VALUES(?, ?, ?)",
+		"INSERT INTO password_info (password, hasher, drops_user_id) VALUES(?, ?, ?)",
 		password,
 		"bcrypt",
 		id,
@@ -95,10 +81,10 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 	// Create uuid
 	profile_uuid := uuid.New()
 	res, err = tx.Exec(
-		"INSERT INTO profile (uuid, first_name, last_name, updated, created, vca_user_id) VALUES(?, ?, ?, ?, ?, ?)",
+		"INSERT INTO profile (uuid, first_name, last_name, updated, created, drops_user_id) VALUES(?, ?, ?, ?, ?, ?)",
 		profile_uuid,
-		signup_data.FirstName,
-		signup_data.LastName,
+		signup_data.SignUpUser.FirstName,
+		signup_data.SignUpUser.LastName,
 		time.Now().Unix(),
 		time.Now().Unix(),
 		id,
@@ -116,11 +102,11 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 	}
 	// Create uuid
 	default_access_uuid := uuid.New()
-	_, err = tx.Exec("INSERT INTO access_user (uuid, name, created, model_id, vca_user_id ) VALUES(?, ?, ?, ?, ?)",
+	_, err = tx.Exec("INSERT INTO access (uuid, name, created, service_id, drops_user_id ) VALUES(?, ?, ?, ?, ?)",
 		default_access_uuid,
 		"joined",
 		time.Now().Unix(),
-		drops_id,
+		service_id,
 		id,
 	)
 	if err != nil {
@@ -128,22 +114,6 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 		log.Print(err, " ### database.SignUp Step_8")
 		return nil, nil, err
 	}
-	access_uuid := uuid.New()
-	if model_id != 0 {
-		_, err = tx.Exec("INSERT INTO access_user (uuid, name, created, model_id, vca_user_id ) VALUES(?, ?, ?, ?, ?)",
-			access_uuid,
-			"join",
-			time.Now().Unix(),
-			model_id,
-			id,
-		)
-		if err != nil {
-			tx.Rollback()
-			log.Print(err, " ### database.SignUp Step_9")
-			return nil, nil, err
-		}
-	}
-
 	//insert access_token
 	token, err := utils.RandomBase64(32)
 	if err != nil {
@@ -152,9 +122,9 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 		return nil, nil, err
 	}
 	res, err = tx.Exec(
-		"INSERT INTO access_token (token, t_case, redirect_url, expired, created,vca_user_id) VALUES(?, ?, ?, ?, ?, ?)",
+		"INSERT INTO access_token (token, t_case, redirect_url, expired, created,drops_user_id) VALUES(?, ?, ?, ?, ?, ?)",
 		token,
-		"signup_"+signup_data.ServiceName,
+		"signup",
 		signup_data.RedirectUrl,
 		time.Now().Add(time.Hour*24).Unix(),
 		time.Now().Unix(),
@@ -171,8 +141,8 @@ func SignUp(signup_data *models.SignUpData) (user_uuid *string, access_token *st
 }
 
 func ConfirmSignUp(t string) (user_uuid *string, err error) {
-	query := "SELECT uuid FROM vca_user " +
-		"JOIN access_token ON access_token.vca_user_id = vca_user.id " +
+	query := "SELECT uuid FROM drops_user " +
+		"JOIN access_token ON access_token.drops_user_id = drops_user.id " +
 		"WHERE access_token.token = ? && access_token.expired > ?"
 	rows, err := utils.DB.Query(query, t, time.Now().Unix())
 	var u_uuid string
@@ -184,9 +154,9 @@ func ConfirmSignUp(t string) (user_uuid *string, err error) {
 		}
 	}
 
-	query = "UPDATE vca_user " +
-		"JOIN access_token ON access_token.vca_user_id = vca_user.id " +
-		"SET vca_user.confirmed = 1, updated = ?  " +
+	query = "UPDATE drops_user " +
+		"JOIN access_token ON access_token.drops_user_id = drops_user.id " +
+		"SET drops_user.confirmed = 1, updated = ?  " +
 		"WHERE access_token.token = ? && access_token.expired > ?"
 	tx, err := utils.DB.Begin()
 	if err != nil {
@@ -227,9 +197,9 @@ func SignUpToken(n *models.NewToken) (*string, error) {
 		log.Print("Database Error: ", err)
 		return nil, err
 	}
-	query := "SELECT vca_user.id FROM vca_user " +
-		"JOIN password_info ON vca_user.id = password_info.vca_user_id " +
-		"WHERE vca_user.email = ? && vca_user.confirmed = 0 " +
+	query := "SELECT drops_user.id FROM drops_user " +
+		"JOIN password_info ON drops_user.id = password_info.drops_user_id " +
+		"WHERE drops_user.email = ? && drops_user.confirmed = 0 " +
 		"LIMIT 1"
 	rows, err := utils.DB.Query(query, n.Email)
 	if err != nil {
@@ -256,7 +226,7 @@ func SignUpToken(n *models.NewToken) (*string, error) {
 		return nil, err
 	}
 	_, err = tx.Exec(
-		"INSERT INTO access_token (token, t_case, expired, created, vca_user_id) VALUES(?, ?, ?, ?, ?)",
+		"INSERT INTO access_token (token, t_case, expired, created, drops_user_id) VALUES(?, ?, ?, ?, ?)",
 		access_token,
 		"signup",
 		time.Now().Add(time.Hour*24).Unix(),
@@ -288,18 +258,19 @@ func GetSessionUser(user_uuid *string) (user *auth.User, err error) {
 		"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 		"'access_uuid', a.uuid, " +
 		"'access_name', a.name, " +
-		"'service_name', sc.name, " +
+		"'service_name', s.name, " +
 		"'model_uuid', m.uuid, " +
 		"'model_name', m.name, " +
 		"'model_type', m.type, " +
-		"'created', m.created)), " +
+		"'created', a.created)), " +
 		"']') " +
-		"FROM vca_user AS u " +
-		"LEFT JOIN profile AS p ON p.vca_user_id = u.id " +
+		"FROM drops_user AS u " +
+		"LEFT JOIN profile AS p ON p.drops_user_id = u.id " +
 		"LEFT JOIN address AS ad ON ad.profile_id = p.id " +
-		"LEFT JOIN access_user AS a ON u.id = a.vca_user_id " +
-		"LEFT JOIN model AS m ON a.model_id = m.id " +
-		"LEFT JOIN service AS sc ON m.service_id = sc.id " +
+		"LEFT JOIN access AS a ON u.id = a.drops_user_id " +
+		"LEFT JOIN service AS s ON a.service_id = s.id " +
+		"LEFT JOIN access_has_model AS ahs ON ahs.access_id = a.id " +
+		"LEFT JOIN model AS m ON m.id = ahs.model_id " +
 		"WHERE u.uuid = ? " +
 		"GROUP BY u.id, u.email, p.uuid " +
 		"LIMIT 1"
@@ -364,7 +335,7 @@ func GetSessionUser(user_uuid *string) (user *auth.User, err error) {
 	return user, err
 }
 
-func SignIn(c *models.Credentials) (user *auth.User, err error) {
+func SignIn(c *models.SignInData) (user *auth.User, err error) {
 
 	query := "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created, " +
 		"p.uuid, p.first_name, p.last_name, ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
@@ -385,16 +356,17 @@ func SignIn(c *models.Credentials) (user *auth.User, err error) {
 		"'model_uuid', m.uuid, " +
 		"'model_name', m.name, " +
 		"'model_type', m.type, " +
-		"'created', m.created)), " +
+		"'created', a.created)), " +
 		"']'), " +
 		"pi.password " +
-		"FROM vca_user AS u " +
-		"LEFT JOIN profile AS p ON p.vca_user_id = u.id " +
+		"FROM drops_user AS u " +
+		"LEFT JOIN profile AS p ON p.drops_user_id = u.id " +
 		"LEFT JOIN address AS ad ON ad.profile_id = p.id " +
-		"LEFT JOIN password_info AS pi ON pi.vca_user_id = u.id " +
-		"LEFT JOIN access_user AS a ON u.id = a.vca_user_id " +
-		"LEFT JOIN model AS m ON a.model_id = m.id " +
-		"LEFT JOIN service AS sc ON m.service_id = sc.id " +
+		"LEFT JOIN password_info AS pi ON pi.drops_user_id = u.id " +
+		"LEFT JOIN access AS a ON u.id = a.drops_user_id " +
+		"LEFT JOIN service AS s ON a.service_id = s.id " +
+		"LEFT JOIN access_has_model AS ahs ON ahs.access_id = a.id " +
+		"LEFT JOIN model AS m ON m.id = ahs.model_id " +
 		"WHERE u.email = ? " +
 		"GROUP BY u.id, u.email, p.uuid, pi.password " +
 		"LIMIT 1"

@@ -5,7 +5,6 @@ import (
 	"drops-backend/models"
 	"drops-backend/nats"
 	"drops-backend/utils"
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -32,20 +31,16 @@ func SignUp(c echo.Context) (err error) {
 		}
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
-	/** outdated because of civi mailing
-	mail := models.MailInfo{To: body.Email, Token: *access_token, Template: "default"}
-	log.Print(mail)
-	nats.PublishToken(&mail)
-	**/
+	//signin user
 	user, err := database.GetSessionUser(user_uuid)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
 	//TODO iRobert Request CrmUser
 
-	log.Print(json.Marshal(body.CrmUserSignUp(*user_uuid, *access_token)))
+	log.Print(body.CrmUserSignUp(*user_uuid, *access_token))
 
-	auth.SetSession(c, user, &auth.AccessToken{AccessToken: "null"})
+	auth.SetSession(c, user)
 	// response created
 	return c.JSON(http.StatusCreated, user)
 }
@@ -63,7 +58,7 @@ func ConfirmSignUp(c echo.Context) (err error) {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
-	auth.SetSession(c, user, &auth.AccessToken{AccessToken: "null"})
+	auth.SetSession(c, user)
 
 	//TODO iRobert Request   Activity: Confirmed Account
 	return c.JSON(http.StatusOK, user)
@@ -92,7 +87,7 @@ func SignUpToken(c echo.Context) (err error) {
 }
 
 func SignIn(c echo.Context) (err error) {
-	body := new(models.Credentials)
+	body := new(models.SignInData)
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -112,7 +107,7 @@ func SignIn(c echo.Context) (err error) {
 	if user.Confirmed == 0 {
 		return c.JSON(http.StatusForbidden, &resp.ResponseMessage{Message: "Not confirmed"})
 	}
-	auth.SetSession(c, user, &auth.AccessToken{AccessToken: "null"})
+	auth.SetSession(c, user)
 	return c.JSON(http.StatusOK, user)
 }
 

@@ -22,7 +22,7 @@ func AddEssentialModels() (err error) {
 	query := "INSERT INTO service (uuid, name, description, created, updated) " +
 		"VALUES(?, ?, ?, ?, ?)"
 	service := service_create.Service()
-	res, err := tx.Exec(
+	_, err = tx.Exec(
 		query,
 		service.Uuid,
 		service.Name,
@@ -38,30 +38,31 @@ func AddEssentialModels() (err error) {
 		log.Print("Error: database.ServiceInsert Step_2 ### ", err)
 		return err
 	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		log.Print("Error: database.ServiceInsert Step_3 ### ", err)
-		return err
-	}
-	uuid_model := uuid.New().String()
-	query = "INSERT INTO model (uuid, name, type, created, service_id) " +
-		"VALUES(?, ?, ?, ?, ?)"
-	_, err = tx.Exec(
-		query,
-		uuid_model,
-		"default",
-		"control",
-		time.Now().Unix(),
-		id,
-	)
-	if err != nil {
-		tx.Rollback()
-		if strings.Contains(err.Error(), "Duplicate entry") {
-			return utils.ErrorConflict
+	/*
+		id, err := res.LastInsertId()
+		if err != nil {
+			log.Print("Error: database.ServiceInsert Step_3 ### ", err)
+			return err
 		}
-		log.Print("Error: database.ServiceInsert Step_4 ### ", err)
-		return err
-	}
+		uuid_model := uuid.New().String()
+		query = "INSERT INTO model (uuid, name, type, created, service_id) " +
+			"VALUES(?, ?, ?, ?, ?)"
+		_, err = tx.Exec(
+			query,
+			uuid_model,
+			"default",
+			"control",
+			time.Now().Unix(),
+			id,
+		)
+		if err != nil {
+			tx.Rollback()
+			if strings.Contains(err.Error(), "Duplicate entry") {
+				return utils.ErrorConflict
+			}
+			log.Print("Error: database.ServiceInsert Step_4 ### ", err)
+			return err
+		}*/
 
 	return tx.Commit()
 
@@ -81,7 +82,7 @@ func AdminCreate(c *models.SignUpData) (*string, error) {
 	res, err := tx.Exec(
 		"INSERT INTO vca_user (uuid, email, confirmed, updated, created) VALUES(?, ?, ?, ?, ?)",
 		Uuid.String(),
-		c.Email,
+		c.SignUpUser.Email,
 		1,
 		time.Now().Unix(),
 		time.Now().Unix(),
@@ -99,7 +100,7 @@ func AdminCreate(c *models.SignUpData) (*string, error) {
 	}
 
 	// insert credentials
-	password, err := bcrypt.GenerateFromPassword([]byte(c.Password), 10)
+	password, err := bcrypt.GenerateFromPassword([]byte(c.SignUpUser.Password), 10)
 	res, err = tx.Exec(
 		"INSERT INTO password_info (password, hasher, vca_user_id) VALUES(?, ?, ?)",
 		password,
@@ -121,8 +122,8 @@ func AdminCreate(c *models.SignUpData) (*string, error) {
 	res, err = tx.Exec(
 		"INSERT INTO profile (uuid, first_name, last_name, updated, created, vca_user_id) VALUES(?, ?, ?, ?, ?, ?)",
 		Uuid,
-		c.FirstName,
-		c.LastName,
+		c.SignUpUser.Email,
+		c.SignUpUser.LastName,
 		time.Now().Unix(),
 		time.Now().Unix(),
 		id,

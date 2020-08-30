@@ -17,12 +17,15 @@ type (
 
 	// For user model
 	Access struct {
-		AccessUuid string `json:"access_uuid" validate:"required"`
-		AccessName string `json:"name" validate:"required"`
-		ModelUuid  string `json:"model_uuid" validate:"required"`
-		ModelName  string `json:"model_name" validate:"required"`
-		ModelType  string `json:"model_type" validate:"required"`
-		Created    int64  `json:"created" validate:"required"`
+		AccessUuid string      `json:"access_uuid" validate:"required"`
+		AccessName string      `json:"name" validate:"required"`
+		Model      AccessModel `json:"model"`
+		Created    int64       `json:"created" validate:"required"`
+	}
+	AccessModel struct {
+		ModelUuid string `json:"model_uuid" validate:"required"`
+		ModelName string `json:"model_name" validate:"required"`
+		ModelType string `json:"model_type" validate:"required"`
 	}
 	AccessList map[string][]Access
 
