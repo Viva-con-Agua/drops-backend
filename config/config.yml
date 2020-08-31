@@ -8,3 +8,8 @@ redis:
     url: 172.2.60.3:6379
 nats:
     url: nats://172.2.60.2:4222
+alloworigins:
+    - "http://172.2.20.1"
+cookie:
+    samesite: none
+    secure: false

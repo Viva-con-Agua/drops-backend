@@ -189,6 +189,84 @@ func ConfirmSignUp(t string) (user_uuid *string, err error) {
 	return &u_uuid, tx.Commit()
 }
 
+func PasswordResetToken(n *models.NewToken) (*string, error) {
+	//Begin Database Query
+	tx, err := utils.DB.Begin()
+	if err != nil {
+		log.Print("Database Error: ", err)
+		return nil, err
+	}
+	//Select drops_user_id
+	query := "SELECT du.id FROM drops_user as du " +
+		"JOIN password_info as p ON du.id = p.drops_user_id " +
+		"WHERE du.email = ? && du.confirmed = 1 &&  " +
+		"LIMIT 1"
+	rows, err := utils.DB.Query(query, n.Email)
+	if err != nil {
+		log.Print("Database Error", err)
+		return nil, err
+	}
+	//initial dummy varibles
+	var id int
+	// convert each row to User
+	for rows.Next() {
+		err = rows.Scan(&id)
+		if err != nil {
+			log.Print("Database Error: ", err)
+			return nil, err
+		}
+	}
+	if id == 0 {
+		return nil, utils.ErrorNotFound
+	}
+
+	//select password Token id
+	query = "SELECT id FROM access_token WHERE access_token.id = ? && access_token.t_case = 'password'"
+	rows, err = utils.DB.Query(query, id)
+	if err != nil {
+		log.Print("Database Error", err)
+		return nil, err
+	}
+	var access_id int
+	// Delete Token if there is one
+	for rows.Next() {
+		err = rows.Scan(&access_id)
+		if err != nil {
+			query = "DELETE FROM access_token WHERE id=?"
+			_, err := tx.Exec(query, id)
+			if err != nil {
+				log.Print("Database Error", err)
+				return nil, err
+			}
+
+		}
+	}
+	// insert new password Token
+	access_token, err := utils.RandomBase64(32)
+	if err != nil {
+		tx.Rollback()
+		log.Print("Database Error: ", err)
+		return nil, err
+	}
+	_, err = tx.Exec(
+		"INSERT INTO access_token (token, t_case, expired, created, drops_user_id) VALUES(?, ?, ?, ?, ?)",
+		access_token,
+		"password",
+		time.Now().Add(time.Hour*24).Unix(),
+		time.Now().Unix(),
+		id,
+	)
+	if err != nil {
+		tx.Rollback()
+		log.Print("Database Error: ", err)
+		return nil, err
+	}
+	return &access_token, tx.Commit()
+
+}
+
+//TODO ResetPassword
+
 func SignUpToken(n *models.NewToken) (*string, error) {
 
 	//insert access_token
@@ -440,58 +518,3 @@ func SignIn(c *models.SignInData) (user *auth.User, err error) {
 	return user, err
 
 }
-
-/*func Current(c *models.Credentials) (user *auth.User, err error) {
-	query := "SELECT u.id, u.uuid, c.email, u.confirmed, u.updated, u.created, CONCAT('[', " +
-	"GROUP_CONCAT(JSON_OBJECT('uuid', a.uuid, 'role_uuid', r.uuid, 'role_name', r.name, 'service_name', r.service_name, " +
-	"'model_uuid', m.uuid, 'model_name', m.name, 'created', a.created)), ']'), c.password " +
-	"FROM pool_user AS u " +
-	"LEFT JOIN credentials AS c ON u.id = c.pool_user_id " +
-	"LEFT JOIN access_user AS a ON u.id = a.pool_user_id " +
-	"LEFT JOIN model AS m ON a.id = m.access_user_id " +
-	"LEFT JOIN role AS r ON a.role_id = r.id " +
-	"WHERE c.email = ? " +
-	"GROUP BY u.id, c.email " +
-	"LIMIT 1"
-	rows, err := utils.DB.Query(query, c.Email)
-	if err != nil {
-		log.Print("Database Error", err)
-		return nil, err
-	}
-
-	//initial dummy varibles
-	var accessByte []byte
-	var id int
-	var password []byte
-	// create User and AccessUser
-	user = new(auth.User)
-	access := new([]auth.AccessUser)
-
-	// convert each row to User
-	for rows.Next() {
-
-		//scan row and fill user
-		err = rows.Scan(&id, &user.Uuid, &user.Email, &user.Confirmed, &user.Updated, &user.Created, &accessByte, &password)
-		if err != nil {
-			log.Print("Database Error: ", err)
-			return nil, err
-		}
-		err = bcrypt.CompareHashAndPassword(password, []byte(c.Password))
-		if err != nil {
-			return nil, utils.ErrorPassword
-		}
-		// create json from []byte
-		err = json.Unmarshal(accessByte, &access)
-
-		if err != nil {
-			log.Print("Database Error: ", err)
-			return nil, err
-		}
-		user.Access = *access
-	}
-	if user.Uuid == "" {
-		return nil, err
-	}
-	return user, err
-
-}*/
