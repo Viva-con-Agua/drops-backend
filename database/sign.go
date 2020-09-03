@@ -322,7 +322,7 @@ func SignUpToken(n *models.NewToken) (*string, error) {
 
 func GetSessionUser(user_uuid *string) (user *auth.User, err error) {
 	query := "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created, " +
-		"p.uuid, p.first_name, p.last_name, ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
+		"p.uuid, p.first_name, p.last_name, CONCAT(p.first_name, ' ', p.last_name), ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
 		"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 		"'uuid', ad.uuid, " +
 		"'street', ad.street, " +
@@ -374,6 +374,7 @@ func GetSessionUser(user_uuid *string) (user *auth.User, err error) {
 			&profile.Uuid,
 			&profile.FirstName,
 			&profile.LastName,
+			&profile.FullName,
 			&profile.Mobile,
 			&profile.Birthdate,
 			&profile.Gender,
@@ -416,7 +417,7 @@ func GetSessionUser(user_uuid *string) (user *auth.User, err error) {
 func SignIn(c *models.SignInData) (user *auth.User, err error) {
 
 	query := "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created, " +
-		"p.uuid, p.first_name, p.last_name, ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
+		"p.uuid, p.first_name, p.last_name, CONCAT(p.first_name, ' ', p.last_name), ifnull(p.mobile, ''), ifnull(p.birthdate, 0), ifnull(p.gender, 'none'), p.updated, p.created, " +
 		"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 		"'uuid', ad.uuid, " +
 		"'street', ad.street, " +
@@ -430,7 +431,7 @@ func SignIn(c *models.SignInData) (user *auth.User, err error) {
 		"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 		"'uuid', a.uuid, " +
 		"'access_name', a.name, " +
-		"'service_name', m.service_name, " +
+		"'service_name', s.name, " +
 		"'model_uuid', m.uuid, " +
 		"'model_name', m.name, " +
 		"'model_type', m.type, " +
@@ -473,6 +474,7 @@ func SignIn(c *models.SignInData) (user *auth.User, err error) {
 			&profile.Uuid,
 			&profile.FirstName,
 			&profile.LastName,
+			&profile.FullName,
 			&profile.Mobile,
 			&profile.Birthdate,
 			&profile.Gender,
@@ -496,10 +498,8 @@ func SignIn(c *models.SignInData) (user *auth.User, err error) {
 			log.Print("Database Error: ", err)
 			return nil, err
 		}
-		if (*access)[0].AccessUuid != "" {
 
-			user.Access = *access.AccessList()
-		}
+		user.Access = *access.AccessList()
 		// create json from []byte
 		err = json.Unmarshal(addressByte, &address)
 
