@@ -4,6 +4,7 @@ import (
 	"drops-backend/controllers"
 	"drops-backend/nats"
 	"drops-backend/utils"
+	"log"
 	"os"
 	"strings"
 
@@ -31,6 +32,7 @@ func main() {
 	if os.Getenv("DEPLOY") == "prod" {
 		godotenv.Load("prod.env")
 	}
+	log.Print(strings.Split(os.Getenv("ALLOW_ORIGINS"), ","))
 	utils.ConnectDatabase()
 	store := auth.RedisSession()
 	nats.Connect()
