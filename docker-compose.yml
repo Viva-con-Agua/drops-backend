@@ -6,7 +6,7 @@ services:
     build: .
     restart: unless-stopped
     volumes:
-        - ${REPO_CONFIG_PATH}/.env_prod:/go/src/${REPO_NAME}/.env
+        - ${REPO_CONFIG_PATH}/prod.env:/go/src/${REPO_NAME}/.env
     links:
         - db:drops-database
     networks:
