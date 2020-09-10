@@ -1,17 +1,6 @@
 package models
 
 type (
-	User struct {
-		Uuid      string   `json:"uuid" validate:"required"`
-		Email     string   `json:"email" validate:"required"`
-		FirstName string   `json:"first_name" validate:"required"`
-		Access    []Access `json:"access"`
-		Profile   Profile  `json:"profile" validate:"required"`
-		Confirmed int      `json:"confirmed"`
-		Updated   int      `json:"updated" validate:"required"`
-		Created   int      `json:"created" validate:"required"`
-	}
-
 	UserQuery struct {
 		Offset      int    `query:"offset" default:"0"`
 		Count       int    `query:"count" default:"40"`
@@ -24,6 +13,9 @@ type (
 
 	UserFilter struct {
 		Email string
+	}
+	UserListFilter struct {
+		UserList []string `json:"user_list" validate:"required"`
 	}
 )
 

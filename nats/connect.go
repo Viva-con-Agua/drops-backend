@@ -2,16 +2,15 @@ package nats
 
 import (
 	"log"
+	"os"
 
-	"github.com/Viva-con-Agua/echo-pool/config"
 	nats "github.com/nats-io/nats.go"
 )
 
 var Nats = new(nats.EncodedConn)
 
 func Connect() {
-	log.Print(config.Config.Nats.Url)
-	nc, err := nats.Connect(config.Config.Nats.Url)
+	nc, err := nats.Connect("nats://" + os.Getenv("NATS_HOST") + ":" + os.Getenv("NATS_PORT"))
 	if err != nil {
 		log.Fatal("nats connection failed", err)
 	}

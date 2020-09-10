@@ -4,10 +4,12 @@ import (
 	"drops-backend/controllers"
 	"drops-backend/nats"
 	"drops-backend/utils"
+	"os"
+	"strings"
 
 	"github.com/Viva-con-Agua/echo-pool/auth"
-	"github.com/Viva-con-Agua/echo-pool/config"
 	"github.com/go-playground/validator"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -25,8 +27,10 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 func main() {
 
 	// intial loading function
-	utils.LoadConfig()
-	config.LoadConfig()
+	godotenv.Load()
+	if os.Getenv("DEPLOY") == "prod" {
+		godotenv.Load("prod.env")
+	}
 	utils.ConnectDatabase()
 	store := auth.RedisSession()
 	nats.Connect()
@@ -34,7 +38,7 @@ func main() {
 	//create echo server
 	e := echo.New()
 	m := middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     utils.Config.Alloworigins,
+		AllowOrigins:     strings.Split(os.Getenv("ALLOW_ORIGINS"), ","),
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 		AllowCredentials: true,
 	})
@@ -42,23 +46,24 @@ func main() {
 	e.Use(store)
 	e.Validator = &CustomValidator{validator: validator.New()}
 
-	a := e.Group("/auth")
+	apiV1 := e.Group("/v1")
+
+	// "/v1/auth"
+	a := apiV1.Group("/auth")
 	a.POST("/signup", controllers.SignUp)
 	a.GET("/signup/confirm/:token", controllers.ConfirmSignUp)
 	a.POST("/signin", controllers.SignIn)
 	a.POST("/signup/token", controllers.SignUpToken)
 	a.GET("/current", controllers.Current)
-
 	a.GET("/signout", controllers.SignOut)
 
-	apiV1 := e.Group("/v1")
-	apiV1.Use(auth.SessionAuth)
-
 	// "/v1/users"
-	apiV1.GET("/users/:uuid", controllers.UserById)
-	apiV1.GET("/users", controllers.UserList)
-	apiV1.PUT("/users", controllers.UserUpdate)
-	apiV1.DELETE("/users", controllers.UserDelete)
+	users := apiV1.Group("/users")
+	users.Use(auth.SessionAuth)
+	users.GET("/:uuid", controllers.UserById)
+	users.GET("", controllers.UserList)
+	users.PUT("", controllers.UserUpdate)
+	users.DELETE("", controllers.UserDelete)
 
 	// "/v1/access"
 	apiV1.POST("/access", controllers.AccessInsert)
@@ -85,6 +90,10 @@ func main() {
 	// "v1/models"
 	apiAdmin.POST("/models", controllers.ModelInsert)
 	apiAdmin.DELETE("/models", controllers.ModelDelete)
+
+	//internal routes for microservices
+	intern := e.Group("/intern")
+	intern.POST("/users", controllers.UserListInternal)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }

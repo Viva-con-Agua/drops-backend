@@ -7,6 +7,7 @@ import (
 	"drops-backend/models"
 	"drops-backend/utils"
 
+	"github.com/Viva-con-Agua/echo-pool/auth"
 	"github.com/Viva-con-Agua/echo-pool/resp"
 	"github.com/labstack/echo"
 )
@@ -25,6 +26,18 @@ func UserList(c echo.Context) (err error) {
 	sort := query.OrderBy()
 	filter := query.Filter()
 	response, err := database.UserList(page, sort, filter)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
+	}
+	return c.JSON(http.StatusOK, response)
+}
+
+func UserListInternal(c echo.Context) (err error) {
+	filter := new(auth.UserRequest)
+	if err = c.Bind(filter); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	response, err := database.UserListInternal(filter)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
 	}
@@ -53,7 +66,7 @@ func UserById(c echo.Context) (err error) {
  */
 func UserUpdate(c echo.Context) (err error) {
 	// create body as models.User
-	body := new(models.User)
+	body := new(auth.User)
 	// save data to body
 	if err = c.Bind(body); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -70,6 +83,7 @@ func UserUpdate(c echo.Context) (err error) {
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError())
 	}
 	// response created
+	//TODO nats.update.user
 	return c.JSON(http.StatusOK, resp.Updated(body.Uuid))
 }
 

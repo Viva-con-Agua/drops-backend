@@ -29,18 +29,19 @@ var UserQuery = "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created
 	"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 	"'access_uuid', a.uuid, " +
 	"'access_name', a.name, " +
-	"'service_name', sc.name, " +
+	"'service_name', s.name, " +
 	"'model_uuid', m.uuid, " +
 	"'model_name', m.name, " +
 	"'model_type', m.type, " +
-	"'created', m.created)), " +
+	"'created', a.created)), " +
 	"']') " +
-	"FROM vca_user AS u " +
-	"LEFT JOIN profile AS p ON p.vca_user_id = u.id " +
+	"FROM drops_user AS u " +
+	"LEFT JOIN profile AS p ON p.drops_user_id = u.id " +
 	"LEFT JOIN address AS ad ON ad.profile_id = p.id " +
-	"LEFT JOIN access_user AS a ON u.id = a.vca_user_id " +
-	"LEFT JOIN model AS m ON a.model_id = m.id " +
-	"LEFT JOIN service AS sc ON m.service_id = sc.id "
+	"LEFT JOIN access AS a ON u.id = a.drops_user_id " +
+	"LEFT JOIN service AS s ON a.service_id = s.id " +
+	"LEFT JOIN access_has_model AS ahs ON ahs.access_id = a.id " +
+	"LEFT JOIN model AS m ON m.id = ahs.model_id "
 
 /**
  * GET /users
@@ -74,6 +75,7 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 			&profile.Uuid,
 			&profile.FirstName,
 			&profile.LastName,
+			&profile.FullName,
 			&profile.Mobile,
 			&profile.Birthdate,
 			&profile.Gender,
@@ -109,6 +111,77 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 		// append to list of user
 		users = append(users, *user)
 	}
+	return users, err
+}
+
+func UserListInternal(u_List *auth.UserRequest) (users []auth.User, err error) {
+	// define the query
+
+	filter := u_List.Filter()
+	log.Print(filter)
+	query := UserQuery +
+		filter +
+		"GROUP BY u.id, p.uuid "
+
+	// execute query
+	rows, err := utils.DB.Query(query)
+	if err != nil {
+		log.Print("Database Error", err)
+		return nil, err
+	}
+
+	//initial varibles
+	var accessByte []byte
+	var addressByte []byte
+	var id int
+	// create User and AccessUser
+	user := new(auth.User)
+	profile := new(auth.Profile)
+	access := new(models.AccessDBList)
+	address := new([]auth.Address)
+	for rows.Next() {
+		//scan row and fill user
+		err = rows.Scan(&id, &user.Uuid, &user.Email, &user.Confirmed, &user.Updated, &user.Created,
+			&profile.Uuid,
+			&profile.FirstName,
+			&profile.LastName,
+			&profile.FullName,
+			&profile.Mobile,
+			&profile.Birthdate,
+			&profile.Gender,
+			&profile.Created,
+			&profile.Updated,
+			&addressByte,
+			&accessByte)
+		if err != nil {
+			log.Print("Database Error: ", err)
+			return nil, err
+		}
+		// create json from []byte
+		err = json.Unmarshal(accessByte, &access)
+
+		if err != nil {
+			log.Print("Database Error: ", err)
+			return nil, err
+		}
+
+		user.Access = *access.AccessList()
+		// create json from []byte
+		err = json.Unmarshal(addressByte, &address)
+
+		if err != nil {
+			log.Print("Database Error: ", err)
+			return nil, err
+		}
+		if (*address)[0].Uuid != "" {
+			user.Profile.Addresses = *address
+		}
+		user.Profile = *profile
+
+		// append to list of user
+		users = append(users, *user)
+	}
+	users = u_List.Additional(users)
 	return users, err
 }
 
@@ -187,7 +260,7 @@ func UserById(search string) (users *auth.User, err error) {
 /**
  * PUT /users
  */
-func UserUpdate(user *models.User) (err error) {
+func UserUpdate(user *auth.User) (err error) {
 	// sgl begin
 	tx, err := utils.DB.Begin()
 	if err != nil {

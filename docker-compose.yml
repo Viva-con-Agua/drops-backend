@@ -6,24 +6,26 @@ services:
     build: .
     restart: unless-stopped
     volumes:
-        - ${CONFIG_PATH}/config.yml:/go/src/config/config.yml
+        - ${REPO_CONFIG_PATH}/.env_prod:/go/src/${REPO_NAME}/.env
+    links:
+        - db:drops-database
     networks:
-      default:
-        ipv4_address: ${API_IP}
+      api:
+          aliases:
+              - ${REPO_NAME}
 
   db:
      image: mysql
      env_file: 
-        - ${CONFIG_PATH}/database.env
+        - ${REPO_CONFIG_PATH}/database.env
      restart: unless-stopped
      volumes: 
         - ${VOLUME_PATH}/mysql/:/var/lib/mysql/
-        - ${CONFIG_PATH}/db/:/docker-entrypoint-initdb.d/
+        - ${REPO_CONFIG_PATH}/db/:/docker-entrypoint-initdb.d/
      networks:
-       default:
-         ipv4_address: ${DATABASE_IP}
+       api:
 
 networks:
-  default:
+  api:
     external:
       name: pool-network
