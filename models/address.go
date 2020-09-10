@@ -5,61 +5,6 @@ import (
 )
 
 type (
-	AddressCreate struct {
-		Street     string `json:"street" validate:"required"`
-		Primary    string `json:"primary" validate;"required"`
-		Additional string `json:"additional" validate;"required"`
-		Zip        string `json:"zip" validate;"required"`
-		City       string `json:"city" validate;"required"`
-		ProfileId  string `json:"profile_id" validate;"required"`
-		Country    string `json:"country" validate;"required"`
-		GoogleId   string `json:"google_id" validate;"required"`
-	}
-	AddressUpdate struct {
-		Uuid       string `json:"uuid" validate;"required"`
-		Primary    string `json:"primary" validate;"required"`
-		Street     string `json:"street" validate:"required"`
-		Additional string `json:"additional" validate;"required"`
-		Zip        string `json:"zip" validate;"required"`
-		City       string `json:"city" validate;"required"`
-		Country    string `json:"country" validate;"required"`
-		GoogleId   string `json:"google_id" validate;"required"`
-	}
-
-	Address struct {
-		Uuid       string `json:"uuid" validate:"required"`
-		Primary    int    `json:"primary" validate:"required"`
-		Street     string `json:"street" validate:"required"`
-		Additional string `json:"additional" validate:"required"`
-		Zip        string `json:"zip" validate:"required"`
-		City       string `json:"city" validate:"required"`
-		Country    string `json:"country" validate:"required"`
-		GoogleId   string `json:"google_id" validate:"required"`
-		Updated    int    `json:"updated" validate:"required"`
-		Created    int    `json:"created" validate:"required"`
-	}
-
-	AddressExtended struct {
-		Uuid       string         `json:"uuid" validate:"required"`
-		Primary    int            `json:"primary" validate:"required"`
-		Street     string         `json:"street" validate:"required"`
-		Additional string         `json:"additional" validate:"required"`
-		Zip        string         `json:"zip" validate:"required"`
-		City       string         `json:"city" validate:"required"`
-		Country    string         `json:"country" validate:"required"`
-		GoogleId   string         `json:"google_id" validate:"required"`
-		Profile    AddressProfile `json:"profile" validate:"required"`
-		Updated    int            `json:"updated" validate:"required"`
-		Created    int            `json:"created" validate:"required"`
-	}
-	AddressProfile struct {
-		Uuid     string `json:"uuid" validate:"required"`
-		Fullname string `json:"full_name" validate:"required"`
-		Email    string `json:"email" validate:"required"`
-		Mobile   string `json:"mobile" validate:"required"`
-	}
-	AddressList []Address
-
 	QueryAddress struct {
 		Offset   string `query:"offset" default:"0"`
 		Count    string `query:"count" default:"40"`
@@ -137,18 +82,6 @@ func (q *QueryAddress) OrderBy() string {
 		return sort + " a.country " + asc
 	}
 	return sort
-}
-
-func (list *AddressList) Distinct() *AddressList {
-	r := make(AddressList, 0, len(*list))
-	m := make(map[Address]bool)
-	for _, val := range *list {
-		if _, ok := m[val]; !ok {
-			m[val] = true
-			r = append(r, val)
-		}
-	}
-	return &r
 }
 
 func (q *QueryAddress) Filter() *FilterAddress {
