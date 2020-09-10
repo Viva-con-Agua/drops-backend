@@ -8,11 +8,16 @@ services:
     volumes:
         - ${REPO_CONFIG_PATH}/prod.env:/go/src/${REPO_NAME}/.env
     links:
-        - db:drops-database
+        - db:db
+    environment:
+        - ALLOW_ORIGINS=${ALLOW_ORIGINS}
+        - COOKIE_SECURE=${COOKIE_SECURE}
+        - SAME_SITE=${SAME_SITE}
     networks:
-      api:
+      app_net:
           aliases:
               - ${REPO_NAME}
+      db_net:
 
   db:
      image: mysql
@@ -23,9 +28,12 @@ services:
         - ${VOLUME_PATH}/mysql/:/var/lib/mysql/
         - ${REPO_CONFIG_PATH}/db/:/docker-entrypoint-initdb.d/
      networks:
-       api:
+       db_net:
 
 networks:
-  api:
+  app_net:
     external:
-      name: pool-network
+        name: api-deploy_app
+  db_net:
+    external:
+        name: api-deploy_db
