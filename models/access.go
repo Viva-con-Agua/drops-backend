@@ -1,9 +1,14 @@
 package models
 
-import "github.com/Viva-con-Agua/echo-pool/auth"
+import (
+	"log"
+
+	"github.com/Viva-con-Agua/echo-pool/api"
+)
 
 type (
 	// For handling database
+
 	AccessDB struct {
 		AccessUuid  string `json:"access_uuid" validate:"required"`
 		AccessName  string `json:"access_name" validate:"required"`
@@ -25,10 +30,34 @@ type (
 		UserUuid    string
 		AccessType  string
 	}
+	AccessSession struct {
+		Service string   `json:"service"`
+		Rights  []string `json:"rights"`
+		Model   string   `json:"model"`
+	}
+	AccessSessionDB struct {
+		Service string `json:"service"`
+		Model   string `json:"model"`
+		Right   string `json:"right"`
+	}
+	AccessSessionDBList []AccessSessionDB
+	AccessString        map[string]map[string]string
 )
 
-func (access_db *AccessDB) Access() *auth.Access {
-	access := new(auth.Access)
+func (as *AccessSessionDBList) List() map[string]map[string][]string {
+	resp := make(map[string]map[string][]string)
+	temp := make(map[string][]string)
+	log.Print(as)
+	temp[(*as)[0].Model] = append(temp[(*as)[0].Model], (*as)[0].Right)
+	resp[(*as)[0].Service] = temp
+	for _, s := range (*as)[1:] {
+		resp[s.Service][s.Model] = append(resp[s.Service][s.Model], s.Right)
+	}
+	return resp
+}
+
+func (access_db *AccessDB) Access() *api.Access {
+	access := new(api.Access)
 	access.AccessUuid = access_db.AccessUuid
 	access.AccessName = access_db.AccessName
 	access.ModelUuid = access_db.ModelUuid
@@ -48,12 +77,14 @@ func (list *AccessDBList) Distinct() *AccessDBList {
 	}
 	return &r
 }
-func (list *AccessDBList) AccessList() *auth.AccessList {
+
+/*
+func (list *AccessDBList) AccessList() *api.AccessList {
 	d_list := list.Distinct()
-	access_list := make(auth.AccessList)
+	access_list := make(api.AccessList)
 	for _, val := range *d_list {
 		access_list[val.ServiceName] = append(access_list[val.ServiceName], *val.Access())
 	}
 	return &access_list
 
-}
+}*/

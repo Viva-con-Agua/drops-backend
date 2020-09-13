@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Viva-con-Agua/echo-pool/auth"
+	"github.com/Viva-con-Agua/echo-pool/api"
 	"github.com/go-playground/validator"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
@@ -29,12 +29,9 @@ func main() {
 
 	// intial loading function
 	godotenv.Load()
-	if os.Getenv("DEPLOY") == "prod" {
-		godotenv.Load("prod.env")
-	}
 	log.Print(strings.Split(os.Getenv("ALLOW_ORIGINS"), ","))
 	utils.ConnectDatabase()
-	store := auth.RedisSession()
+	store := api.RedisSession()
 	nats.Connect()
 	controllers.AddEssential()
 	//create echo server
@@ -61,7 +58,7 @@ func main() {
 
 	// "/v1/users"
 	users := apiV1.Group("/users")
-	users.Use(auth.SessionAuth)
+	users.Use(api.SessionAuth)
 	users.GET("/:uuid", controllers.UserById)
 	users.GET("", controllers.UserList)
 	users.PUT("", controllers.UserUpdate)
@@ -78,7 +75,7 @@ func main() {
 	apiAdmin := e.Group("/admin")
 
 	apiAdmin.GET("/services", controllers.ServiceList)
-	apiAdmin.POST("/services", controllers.ServiceInsert)
+	apiAdmin.POST("/services", controllers.ServiceCreate)
 
 	apiAdmin.GET("/users/:uuid", controllers.UserById)
 	apiAdmin.GET("/users", controllers.UserList)
@@ -96,6 +93,10 @@ func main() {
 	//internal routes for microservices
 	intern := e.Group("/intern")
 	intern.POST("/users", controllers.UserListInternal)
-
-	e.Logger.Fatal(e.Start(":1323"))
+	intern.POST("/service", controllers.ServiceCreate)
+	if port, ok := os.LookupEnv("REPO_PORT"); ok {
+		e.Logger.Fatal(e.Start(":" + port))
+	} else {
+		e.Logger.Fatal(e.Start(":1323"))
+	}
 }

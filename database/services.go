@@ -12,7 +12,7 @@ import (
 /*
  *
  */
-func ServiceInsert(service_create *models.ServiceCreate) (service *models.Service, err error) {
+func ServiceCreate(service_create *models.ServiceCreate) (service *models.Service, err error) {
 	//initial database
 	tx, err := utils.DB.Begin()
 	if err != nil {

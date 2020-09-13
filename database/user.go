@@ -10,7 +10,7 @@ import (
 	"drops-backend/models"
 	"drops-backend/utils"
 
-	"github.com/Viva-con-Agua/echo-pool/auth"
+	"github.com/Viva-con-Agua/echo-pool/api"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -46,7 +46,7 @@ var UserQuery = "SELECT u.id, u.uuid, u.email, u.confirmed, u.updated, u.created
 /**
  * GET /users
  */
-func UserList(page *models.Page, sort string, filter *models.UserFilter) (users []auth.User, err error) {
+func UserList(page *models.Page, sort string, filter *models.UserFilter) (users []api.User, err error) {
 	// define the query
 	query := UserQuery +
 		"GROUP BY u.id, p.uuid " +
@@ -65,10 +65,10 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 	var addressByte []byte
 	var id int
 	// create User and AccessUser
-	user := new(auth.User)
-	profile := new(auth.Profile)
-	access := new(models.AccessDBList)
-	address := new([]auth.Address)
+	user := new(api.User)
+	profile := new(api.Profile)
+	access := new(api.AccessList)
+	address := new([]api.Address)
 	for rows.Next() {
 		//scan row and fill user
 		err = rows.Scan(&id, &user.Uuid, &user.Email, &user.Confirmed, &user.Updated, &user.Created,
@@ -95,7 +95,7 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 			return nil, err
 		}
 
-		user.Access = *access.AccessList()
+		user.Access = *access
 		// create json from []byte
 		err = json.Unmarshal(addressByte, &address)
 
@@ -114,7 +114,7 @@ func UserList(page *models.Page, sort string, filter *models.UserFilter) (users 
 	return users, err
 }
 
-func UserListInternal(u_List *auth.UserRequest) (users []auth.User, err error) {
+func UserListInternal(u_List *api.UserRequest) (users []api.User, err error) {
 	// define the query
 
 	filter := u_List.Filter()
@@ -135,10 +135,10 @@ func UserListInternal(u_List *auth.UserRequest) (users []auth.User, err error) {
 	var addressByte []byte
 	var id int
 	// create User and AccessUser
-	user := new(auth.User)
-	profile := new(auth.Profile)
-	access := new(models.AccessDBList)
-	address := new([]auth.Address)
+	user := new(api.User)
+	profile := new(api.Profile)
+	access := new(api.AccessList)
+	address := new([]api.Address)
 	for rows.Next() {
 		//scan row and fill user
 		err = rows.Scan(&id, &user.Uuid, &user.Email, &user.Confirmed, &user.Updated, &user.Created,
@@ -165,7 +165,7 @@ func UserListInternal(u_List *auth.UserRequest) (users []auth.User, err error) {
 			return nil, err
 		}
 
-		user.Access = *access.AccessList()
+		user.Access = *access
 		// create json from []byte
 		err = json.Unmarshal(addressByte, &address)
 
@@ -188,7 +188,7 @@ func UserListInternal(u_List *auth.UserRequest) (users []auth.User, err error) {
 /**
  * GET /users/:id
  */
-func UserById(search string) (users *auth.User, err error) {
+func UserById(search string) (users *api.User, err error) {
 	// execute the query
 	userQuery := UserQuery +
 		"WHERE u.uuid = ? " +
@@ -204,10 +204,10 @@ func UserById(search string) (users *auth.User, err error) {
 	var addressByte []byte
 	var id int
 	// create User and AccessUser
-	user := new(auth.User)
-	profile := new(auth.Profile)
-	access := new(models.AccessDBList)
-	address := new([]auth.Address) // convert each row to User
+	user := new(api.User)
+	profile := new(api.Profile)
+	access := new(api.AccessList)
+	address := new([]api.Address) // convert each row to User
 
 	// convert each row to User
 	for rows.Next() {
@@ -236,7 +236,7 @@ func UserById(search string) (users *auth.User, err error) {
 			return nil, err
 		}
 
-		user.Access = *access.AccessList()
+		user.Access = *access
 		// create json from []byte
 		err = json.Unmarshal(addressByte, &address)
 
@@ -260,7 +260,7 @@ func UserById(search string) (users *auth.User, err error) {
 /**
  * PUT /users
  */
-func UserUpdate(user *auth.User) (err error) {
+func UserUpdate(user *api.User) (err error) {
 	// sgl begin
 	tx, err := utils.DB.Begin()
 	if err != nil {
@@ -309,4 +309,80 @@ func UserDelete(deleteBody *models.DeleteBody) (err error) {
 		return err
 	}
 	return tx.Commit()
+}
+
+func PasswordResetToken(n *models.NewToken) (*string, error) {
+	//Begin Database Query
+	tx, err := utils.DB.Begin()
+	if err != nil {
+		log.Print("Database Error: ", err)
+		return nil, err
+	}
+	//Select drops_user_id
+	query := "SELECT du.id FROM drops_user as du " +
+		"JOIN password_info as p ON du.id = p.drops_user_id " +
+		"WHERE du.email = ? && du.confirmed = 1 &&  " +
+		"LIMIT 1"
+	rows, err := utils.DB.Query(query, n.Email)
+	if err != nil {
+		log.Print("Database Error", err)
+		return nil, err
+	}
+	//initial dummy varibles
+	var id int
+	// convert each row to User
+	for rows.Next() {
+		err = rows.Scan(&id)
+		if err != nil {
+			log.Print("Database Error: ", err)
+			return nil, err
+		}
+	}
+	if id == 0 {
+		return nil, utils.ErrorNotFound
+	}
+
+	//select password Token id
+	query = "SELECT id FROM access_token WHERE access_token.id = ? && access_token.t_case = 'password'"
+	rows, err = utils.DB.Query(query, id)
+	if err != nil {
+		log.Print("Database Error", err)
+		return nil, err
+	}
+	var access_id int
+	// Delete Token if there is one
+	for rows.Next() {
+		err = rows.Scan(&access_id)
+		if err != nil {
+			query = "DELETE FROM access_token WHERE id=?"
+			_, err := tx.Exec(query, id)
+			if err != nil {
+				log.Print("Database Error", err)
+				return nil, err
+			}
+
+		}
+	}
+	// insert new password Token
+	access_token, err := utils.RandomBase64(32)
+	if err != nil {
+		tx.Rollback()
+		log.Print("Database Error: ", err)
+		return nil, err
+	}
+	_, err = tx.Exec(
+		"INSERT INTO access_token (token, t_case, expired, created, drops_user_id) VALUES(?, ?, ?, ?, ?)",
+		access_token,
+		"password",
+		time.Now().Add(time.Hour*24).Unix(),
+		time.Now().Unix(),
+		id,
+	)
+	if err != nil {
+		tx.Rollback()
+		log.Print("Database Error: ", err)
+		return nil, err
+	}
+	return &access_token, tx.Commit()
+
 }

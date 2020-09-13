@@ -18,7 +18,7 @@ func ServiceList(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, response)
 }
 
-func ServiceInsert(c echo.Context) (err error) {
+func ServiceCreate(c echo.Context) (err error) {
 	body := new(models.ServiceCreate)
 	// save data to body
 	if err = c.Bind(body); err != nil {
@@ -29,7 +29,7 @@ func ServiceInsert(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	// insert body into database
-	response, err := database.ServiceInsert(body)
+	response, err := database.ServiceCreate(body)
 	if err != nil {
 		if strings.Contains(err.Error(), "Duplicate entry") {
 			return c.JSON(http.StatusConflict, resp.Conflict())
