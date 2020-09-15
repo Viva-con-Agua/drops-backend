@@ -1,11 +1,5 @@
 package models
 
-import (
-	"log"
-
-	"github.com/Viva-con-Agua/echo-pool/api"
-)
-
 type (
 	// For handling database
 
@@ -46,36 +40,16 @@ type (
 
 func (as *AccessSessionDBList) List() map[string]map[string][]string {
 	resp := make(map[string]map[string][]string)
-	temp := make(map[string][]string)
-	log.Print(as)
-	temp[(*as)[0].Model] = append(temp[(*as)[0].Model], (*as)[0].Right)
-	resp[(*as)[0].Service] = temp
-	for _, s := range (*as)[1:] {
-		resp[s.Service][s.Model] = append(resp[s.Service][s.Model], s.Right)
-	}
-	return resp
-}
-
-func (access_db *AccessDB) Access() *api.Access {
-	access := new(api.Access)
-	access.AccessUuid = access_db.AccessUuid
-	access.AccessName = access_db.AccessName
-	access.ModelUuid = access_db.ModelUuid
-	access.ModelName = access_db.ModelName
-	access.ModelType = access_db.ModelType
-	return access
-}
-
-func (list *AccessDBList) Distinct() *AccessDBList {
-	r := make(AccessDBList, 0, len(*list))
-	m := make(map[AccessDB]bool)
-	for _, val := range *list {
-		if _, ok := m[val]; !ok {
-			m[val] = true
-			r = append(r, val)
+	for _, s := range *as {
+		if len(resp[s.Service]) == 0 {
+			sign := make(map[string][]string)
+			sign[s.Model] = append(sign[s.Model], s.Right)
+			resp[s.Service] = sign
+		} else {
+			resp[s.Service][s.Model] = append(resp[s.Service][s.Model], s.Right)
 		}
 	}
-	return &r
+	return resp
 }
 
 /*

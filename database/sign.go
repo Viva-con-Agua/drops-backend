@@ -15,6 +15,7 @@ import (
 /*
 * TODO more than on service assign
  */
+
 func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api *api.ApiError) {
 	// begin database query and handle error
 	tx, err := utils.DB.Begin()
@@ -25,11 +26,12 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 	//insert user
 	u_uuid := uuid.New().String()
 	res, err := tx.Exec(
-		"INSERT INTO drops_user (uuid, email, confirmed, privacy_policy, updated, created) VALUES(?, ?, ?, ?, ?, ?)",
+		"INSERT INTO drops_user (uuid, email, confirmed, privacy_policy, country, updated, created) VALUES(?, ?, ?, ?, ?, ?, ?)",
 		u_uuid,
 		s.SignUser.Email,
 		0,
 		s.SignUser.PrivacyPolicy,
+		s.SignUser.Country,
 		created,
 		created,
 	)
@@ -151,12 +153,12 @@ func ConfirmSignUp(t string) (u_uuid *string, api_err *api.ApiError) {
 		return nil, api.GetError(err)
 	}
 	if r == 0 {
-		err = utils.ErrorNotFound
+		err = api.ErrorNotFound
 		return nil, api.GetError(err)
 	}
 
 	query = "INSERT INTO `access_right` ( `right`, created, access_id) " +
-		"VALUES('created', ?, (SELECT a.id FROM access AS a WHERE a.service = 'drops-backend' AND a.model_id IS NULL AND a.drops_user_id = ?))"
+		"VALUES('confirmed', ?, (SELECT a.id FROM access AS a WHERE a.service = 'drops-backend' AND a.model_id IS NULL AND a.drops_user_id = ?))"
 	_, err = tx.Exec(query, created, u_id)
 	if err != nil {
 		tx.Rollback()
@@ -206,13 +208,13 @@ func SignUpToken(n *models.NewToken) (t *string, ap_err *api.ApiError) {
 }
 
 func GetSessionUser(user_uuid *string) (user *api.UserSession, err_api *api.ApiError) {
-	query := "SELECT u.uuid, u.email, u.confirmed, u.privacy_policy, u.updated, u.created, " +
+	query := "SELECT u.uuid, u.email, u.confirmed, u.privacy_policy, u.country, u.updated, u.created, " +
 		"p.uuid, u.uuid, p.first_name, p.last_name, CONCAT(p.first_name, ' ', p.last_name), " +
 		"ifnull(p.display_name, 'none'), ifnull(p.gender, 'none'),p.updated, p.created, " +
 		"ifnull(av.type, ''), ifnull(av.url,''), ifnull(av.updated, 0), ifnull(av.created, 0), " +
 		"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
 		"'service', a.service, " +
-		"'model', 'default', " +
+		"'model', ifnull(m.uuid, 'default'), " +
 		"'right', ar.right )), " +
 		"']') " +
 		"FROM drops_user AS u " +
@@ -225,13 +227,15 @@ func GetSessionUser(user_uuid *string) (user *api.UserSession, err_api *api.ApiE
 		"GROUP BY u.id, p.uuid, av.id " +
 		"LIMIT 1"
 	var accessByte []byte
+	var priv, conf int
 	user = new(api.UserSession)
 	profile := new(models.Profile)
 	err := utils.DB.QueryRow(query, user_uuid).Scan(
 		&user.Uuid,
 		&user.Email,
-		&user.Confirmed,
-		&user.PrivacyPolicy,
+		&conf,
+		&priv,
+		&user.Country,
 		&user.Updated,
 		&user.Created,
 		&profile.Uuid,
@@ -247,14 +251,16 @@ func GetSessionUser(user_uuid *string) (user *api.UserSession, err_api *api.ApiE
 		&profile.Avatar.Url,
 		&profile.Avatar.Updated,
 		&profile.Avatar.Created,
-		&accessByte)
+		&accessByte,
+	)
 	if err != nil {
 		return nil, api.GetError(err)
 	}
+	user.Confirmed = api.Itob(conf)
+	user.PrivacyPolicy = api.Itob(priv)
 	as := new(models.AccessSessionDBList)
 
 	err = json.Unmarshal(accessByte, &as)
-	log.Print(string(accessByte))
 	if err != nil {
 		log.Print("Database Error: ", err)
 		return nil, api.GetError(err)
@@ -271,13 +277,15 @@ func GetSessionUser(user_uuid *string) (user *api.UserSession, err_api *api.ApiE
  */
 
 func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
-	query := "SELECT u.uuid, u.email, u.confirmed, u.privacy_policy, u.updated, u.created, " +
+	query := "SELECT u.uuid, u.email, u.confirmed, u.privacy_policy, u.country, u.updated, u.created, " +
 		"p.uuid, u.uuid, p.first_name, p.last_name, CONCAT(p.first_name, ' ', p.last_name), " +
 		"ifnull(p.display_name, 'none'), ifnull(p.gender, 'none'),p.updated, p.created, " +
 		"ifnull(av.type, ''), ifnull(av.url,''), ifnull(av.updated, 0), ifnull(av.created, 0), " +
-		"JSON_OBJECT(" +
-		"a.service, JSON_OBJECT(" +
-		"ifnull(m.uuid, 'default'), GROUP_CONCAT(CONCAT(ar.right)))), " +
+		"CONCAT('[', GROUP_CONCAT(JSON_OBJECT(" +
+		"'service', a.service, " +
+		"'model', ifnull(m.uuid, 'default'), " +
+		"'right', ar.right )), " +
+		"']'), " +
 		"pi.password " +
 		"FROM drops_user AS u " +
 		"LEFT JOIN password_info AS pi ON pi.drops_user_id = u.id " +
@@ -287,7 +295,8 @@ func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
 		"LEFT JOIN access_right AS ar ON ar.access_id = a.id " +
 		"LEFT JOIN model AS m ON a.model_id = m.id " +
 		"WHERE u.email = ? " +
-		"GROUP BY u.id, p.id, av.profile_id, pi.password, a.id, m.id"
+		"GROUP BY u.id, p.id, av.profile_id, pi.password " +
+		"LIMIT 1"
 	var accessByte []byte
 	var password []byte
 	user = new(api.UserSession)
@@ -302,6 +311,7 @@ func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
 			&user.Email,
 			&user.Confirmed,
 			&user.PrivacyPolicy,
+			&user.Country,
 			&user.Updated,
 			&user.Created,
 			&profile.Uuid,
@@ -329,7 +339,6 @@ func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
 		}
 		as := new(models.AccessSessionDBList)
 		err = json.Unmarshal(accessByte, &as)
-		log.Print(string(accessByte))
 		if err != nil {
 			log.Print("Database Error: ", err)
 			return nil, api.GetError(err)
@@ -338,6 +347,9 @@ func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
 		p_add := make(map[string]interface{})
 		p_add["profile"] = *profile
 		user.Additional = p_add
+	}
+	if user.Uuid == "" {
+		return nil, api.GetError(utils.ErrorUserNotFound)
 	}
 	return user, api.GetError(err)
 }

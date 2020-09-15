@@ -5,6 +5,7 @@ import (
 	"drops-backend/utils"
 	"log"
 
+	"github.com/Viva-con-Agua/echo-pool/api"
 	"github.com/google/uuid"
 )
 
@@ -143,7 +144,7 @@ func AccessDelete(deleteBody *models.DeleteBody) (err error) {
 	}
 	//if id == 0 return NotFound
 	if id == 0 {
-		err = utils.ErrorNotFound
+		err = api.ErrorNotFound
 		return err
 	}
 	//update user user

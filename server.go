@@ -33,7 +33,7 @@ func main() {
 	utils.ConnectDatabase()
 	store := api.RedisSession()
 	nats.Connect()
-	controllers.AddEssential()
+	nats.SubscribeAddModel()
 	//create echo server
 	e := echo.New()
 	m := middleware.CORSWithConfig(middleware.CORSConfig{
@@ -59,9 +59,6 @@ func main() {
 	// "/v1/users"
 	users := apiV1.Group("/users")
 	users.Use(api.SessionAuth)
-	users.GET("/:uuid", controllers.UserById)
-	users.GET("", controllers.UserList)
-	users.PUT("", controllers.UserUpdate)
 	users.DELETE("", controllers.UserDelete)
 
 	// "/v1/access"
@@ -69,17 +66,11 @@ func main() {
 	apiV1.DELETE("/access", controllers.AccessDelete)
 
 	// "v1/models"
-	apiV1.POST("/models", controllers.ModelInsert)
+	apiV1.POST("/models", controllers.ModelCreate)
 	apiV1.DELETE("/models", controllers.ModelDelete)
 
 	apiAdmin := e.Group("/admin")
 
-	apiAdmin.GET("/services", controllers.ServiceList)
-	apiAdmin.POST("/services", controllers.ServiceCreate)
-
-	apiAdmin.GET("/users/:uuid", controllers.UserById)
-	apiAdmin.GET("/users", controllers.UserList)
-	apiAdmin.PUT("/users", controllers.UserUpdate)
 	apiAdmin.DELETE("/users", controllers.UserDelete)
 
 	// "/v1/access"
@@ -87,13 +78,11 @@ func main() {
 	apiAdmin.DELETE("/access", controllers.AccessDelete)
 
 	// "v1/models"
-	apiAdmin.POST("/models", controllers.ModelInsert)
+	apiAdmin.POST("/models", controllers.ModelCreate)
 	apiAdmin.DELETE("/models", controllers.ModelDelete)
 
 	//internal routes for microservices
-	intern := e.Group("/intern")
-	intern.POST("/users", controllers.UserListInternal)
-	intern.POST("/service", controllers.ServiceCreate)
+	//intern := e.Group("/intern")
 	if port, ok := os.LookupEnv("REPO_PORT"); ok {
 		e.Logger.Fatal(e.Start(":" + port))
 	} else {

@@ -15,7 +15,8 @@ type (
 		Password      string `json:"password" validate:"required"`
 		FirstName     string `json:"first_name" validate:"required"`
 		LastName      string `json:"last_name" validate:"required"`
-		PrivacyPolicy int    `json:"privacy_policy"`
+		PrivacyPolicy bool   `json:"privacy_policy"`
+		Country       string `json:"country"`
 	}
 	Offset struct {
 		KnownFrom  string `json:"known_from" validate:"required"`

@@ -3,9 +3,9 @@ package controllers
 import (
 	"drops-backend/database"
 	"drops-backend/models"
-	"drops-backend/utils"
 	"net/http"
 
+	"github.com/Viva-con-Agua/echo-pool/api"
 	"github.com/Viva-con-Agua/echo-pool/resp"
 	"github.com/labstack/echo"
 )
@@ -42,7 +42,7 @@ func AccessDelete(c echo.Context) (err error) {
 	}
 	// update body into database
 	if err = database.AccessDelete(body); err != nil {
-		if err == utils.ErrorNotFound {
+		if err == api.ErrorNotFound {
 			return c.JSON(http.StatusNoContent, resp.NoContent(body.Uuid))
 		}
 		return c.JSON(http.StatusInternalServerError, resp.InternelServerError())

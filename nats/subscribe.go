@@ -4,13 +4,15 @@ import (
 	"drops-backend/database"
 	"drops-backend/models"
 	"log"
+
+	"github.com/Viva-con-Agua/echo-pool/api"
 )
 
 func SubscribeAddModel() {
-	_, err := Nats.Subscribe("drops.model.add", func(a *models.ModelCreate) {
-		err := database.ModelInsert(a)
-		if err != nil {
-			log.Print("Database Error: ", err)
+	_, err := Nats.Subscribe("drops.model.add", func(a *api.ModelCreate) {
+		_, api_err := database.ModelCreate(a)
+		if api_err != nil {
+			log.Print(api_err)
 		}
 	})
 	if err != nil {

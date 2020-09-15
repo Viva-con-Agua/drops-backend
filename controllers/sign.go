@@ -25,6 +25,8 @@ func SignUp(c echo.Context) (err error) {
 	// insert body into database
 	user_uuid, access_token, err_api := database.SignUp(body)
 	if err_api.Error != nil {
+
+		err_api.LogError(c, body)
 		if strings.Contains(err_api.Error.Error(), "Duplicate entry") {
 			return c.JSON(http.StatusConflict, api.RespConflict("email", body.SignUser.Email))
 		}
@@ -47,7 +49,7 @@ func ConfirmSignUp(c echo.Context) (err error) {
 	token := c.Param("token")
 	user_uuid, api_err := database.ConfirmSignUp(token)
 	if api_err.Error != nil {
-		if api_err.Error == utils.ErrorNotFound {
+		if api_err.Error == api.ErrorNotFound {
 			return c.JSON(http.StatusBadRequest, api.RespNoContent("token", token))
 		}
 		if strings.Contains(api_err.Error.Error(), "no rows in result set") {
@@ -78,7 +80,7 @@ func SignUpToken(c echo.Context) (err error) {
 	}
 	access_token, api_err := database.SignUpToken(body)
 	if api_err.Error != nil {
-		if api_err.Error == utils.ErrorNotFound {
+		if api_err.Error == api.ErrorNotFound {
 			return c.JSON(http.StatusNotFound, api.RespNoContent("email", body.Email))
 		}
 		api_err.LogError(c, body)
@@ -99,17 +101,21 @@ func SignIn(c echo.Context) (err error) {
 	}
 	user, api_err := database.SignIn(body)
 	if api_err.Error != nil {
-		if api_err.Error == utils.ErrorPassword {
+		if api_err.Error == api.ErrorPassword {
 			return c.JSON(http.StatusUnauthorized, api.RespCustom("No valid email or password", nil, nil))
 		}
 		if strings.Contains(api_err.Error.Error(), "no rows in result set") {
 			return c.JSON(http.StatusBadRequest, api.RespNoContent("email", body.Email))
 		}
+		if api_err.Error == utils.ErrorUserNotFound {
+			key := "email"
+			return c.JSON(http.StatusBadRequest, api.RespCustom("no user with given email", &key, body.Email))
+		}
 		api_err.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 
 	}
-	if user.Confirmed == 0 {
+	if user.Confirmed == false {
 		return c.JSON(http.StatusForbidden, api.RespCustom("Not confirmed", nil, nil))
 	}
 	api.SetSession(c, user)
