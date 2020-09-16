@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"drops-backend/crm"
 	"drops-backend/database"
 	"drops-backend/models"
 	"drops-backend/utils"
@@ -40,7 +41,11 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
 	//TODO iRobert Request CrmUser
-	log.Print(body.CrmUserSignUp(*user_uuid, *access_token))
+	crm_user := body.CrmUserSignUp(*user_uuid, *access_token)
+	crm_event := crm_user.CrmData
+	crm_event.Activity = "EVENT_JOIN"
+	crm.IrobertCreateUser(crm_user)
+	crm.IrobertJoinEvent(&crm_event)
 	api.SetSession(c, user)
 	return c.JSON(http.StatusCreated, user)
 }
