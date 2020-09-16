@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Viva-con-Agua/echo-pool/auth"
+	"github.com/Viva-con-Agua/echo-pool/api"
 	"github.com/go-playground/validator"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
@@ -29,14 +29,11 @@ func main() {
 
 	// intial loading function
 	godotenv.Load()
-	if os.Getenv("DEPLOY") == "prod" {
-		godotenv.Load("prod.env")
-	}
 	log.Print(strings.Split(os.Getenv("ALLOW_ORIGINS"), ","))
 	utils.ConnectDatabase()
-	store := auth.RedisSession()
+	store := api.RedisSession()
 	nats.Connect()
-	controllers.AddEssential()
+	nats.SubscribeAddModel()
 	//create echo server
 	e := echo.New()
 	m := middleware.CORSWithConfig(middleware.CORSConfig{
@@ -61,10 +58,7 @@ func main() {
 
 	// "/v1/users"
 	users := apiV1.Group("/users")
-	users.Use(auth.SessionAuth)
-	users.GET("/:uuid", controllers.UserById)
-	users.GET("", controllers.UserList)
-	users.PUT("", controllers.UserUpdate)
+	users.Use(api.SessionAuth)
 	users.DELETE("", controllers.UserDelete)
 
 	// "/v1/access"
@@ -72,17 +66,11 @@ func main() {
 	apiV1.DELETE("/access", controllers.AccessDelete)
 
 	// "v1/models"
-	apiV1.POST("/models", controllers.ModelInsert)
+	apiV1.POST("/models", controllers.ModelCreate)
 	apiV1.DELETE("/models", controllers.ModelDelete)
 
 	apiAdmin := e.Group("/admin")
 
-	apiAdmin.GET("/services", controllers.ServiceList)
-	apiAdmin.POST("/services", controllers.ServiceInsert)
-
-	apiAdmin.GET("/users/:uuid", controllers.UserById)
-	apiAdmin.GET("/users", controllers.UserList)
-	apiAdmin.PUT("/users", controllers.UserUpdate)
 	apiAdmin.DELETE("/users", controllers.UserDelete)
 
 	// "/v1/access"
@@ -90,12 +78,14 @@ func main() {
 	apiAdmin.DELETE("/access", controllers.AccessDelete)
 
 	// "v1/models"
-	apiAdmin.POST("/models", controllers.ModelInsert)
+	apiAdmin.POST("/models", controllers.ModelCreate)
 	apiAdmin.DELETE("/models", controllers.ModelDelete)
 
 	//internal routes for microservices
-	intern := e.Group("/intern")
-	intern.POST("/users", controllers.UserListInternal)
-
-	e.Logger.Fatal(e.Start(":1323"))
+	//intern := e.Group("/intern")
+	if port, ok := os.LookupEnv("REPO_PORT"); ok {
+		e.Logger.Fatal(e.Start(":" + port))
+	} else {
+		e.Logger.Fatal(e.Start(":1323"))
+	}
 }

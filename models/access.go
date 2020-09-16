@@ -1,9 +1,8 @@
 package models
 
-import "github.com/Viva-con-Agua/echo-pool/auth"
-
 type (
 	// For handling database
+
 	AccessDB struct {
 		AccessUuid  string `json:"access_uuid" validate:"required"`
 		AccessName  string `json:"access_name" validate:"required"`
@@ -25,35 +24,41 @@ type (
 		UserUuid    string
 		AccessType  string
 	}
+	AccessSession struct {
+		Service string   `json:"service"`
+		Rights  []string `json:"rights"`
+		Model   string   `json:"model"`
+	}
+	AccessSessionDB struct {
+		Service string `json:"service"`
+		Model   string `json:"model"`
+		Right   string `json:"right"`
+	}
+	AccessSessionDBList []AccessSessionDB
+	AccessString        map[string]map[string]string
 )
 
-func (access_db *AccessDB) Access() *auth.Access {
-	access := new(auth.Access)
-	access.AccessUuid = access_db.AccessUuid
-	access.AccessName = access_db.AccessName
-	access.ModelUuid = access_db.ModelUuid
-	access.ModelName = access_db.ModelName
-	access.ModelType = access_db.ModelType
-	return access
-}
-
-func (list *AccessDBList) Distinct() *AccessDBList {
-	r := make(AccessDBList, 0, len(*list))
-	m := make(map[AccessDB]bool)
-	for _, val := range *list {
-		if _, ok := m[val]; !ok {
-			m[val] = true
-			r = append(r, val)
+func (as *AccessSessionDBList) List() map[string]map[string][]string {
+	resp := make(map[string]map[string][]string)
+	for _, s := range *as {
+		if len(resp[s.Service]) == 0 {
+			sign := make(map[string][]string)
+			sign[s.Model] = append(sign[s.Model], s.Right)
+			resp[s.Service] = sign
+		} else {
+			resp[s.Service][s.Model] = append(resp[s.Service][s.Model], s.Right)
 		}
 	}
-	return &r
+	return resp
 }
-func (list *AccessDBList) AccessList() *auth.AccessList {
+
+/*
+func (list *AccessDBList) AccessList() *api.AccessList {
 	d_list := list.Distinct()
-	access_list := make(auth.AccessList)
+	access_list := make(api.AccessList)
 	for _, val := range *d_list {
 		access_list[val.ServiceName] = append(access_list[val.ServiceName], *val.Access())
 	}
 	return &access_list
 
-}
+}*/

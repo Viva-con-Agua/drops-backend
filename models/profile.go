@@ -6,6 +6,31 @@ import (
 )
 
 type (
+	Avatar struct {
+		Url     string `json:"url"`
+		Type    string `json:"type"`
+		Updated int64  `json:"updated" validate:"required"`
+		Created int64  `json:"created" validate:"required"`
+	}
+	ProfileCreate struct {
+		Uuid      string `json:"profile_uuid" validate:"required"`
+		FirstName string `json:"first_name" validate:"required"`
+		LastName  string `json:"last_name" validate:"required"`
+		Updated   int64  `json:"updated" validate:"required"`
+		Created   int64  `json:"created" validate:"required"`
+	}
+	Profile struct {
+		Uuid        string `json:"uuid" validate:"required"`
+		UserUuid    string `json:"user_uuid" validate:"required"`
+		Avatar      Avatar `json:"avatar"`
+		FirstName   string `json:"first_name" validate:"required"`
+		LastName    string `json:"last_name" validate:"required"`
+		FullName    string `json:"full_name" validate:"required"`
+		DisplayName string `json:"display_name" validate:"required"`
+		Gender      string `json:"gender"`
+		Updated     int64  `json:"updated" validate:"required"`
+		Created     int64  `json:"created" validate:"required"`
+	}
 	QueryProfile struct {
 		Offset string `query:"offset" default:"0"`
 		Count  string `query:"count" default:"40"`
