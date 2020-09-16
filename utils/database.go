@@ -13,15 +13,15 @@ var DB = new(sql.DB)
 var err = sql.ErrConnDone
 
 func ConnectDatabase() {
-	mysqlInfo := os.Getenv("DB_USER") +
+	mysqlInfo := os.Getenv("MYSQL_USER") +
 		":" +
-		os.Getenv("DB_PASSWORD") +
+		os.Getenv("MYSQL_PASSWORD") +
 		"@tcp(" +
 		os.Getenv("DB_HOST") +
 		":" +
 		os.Getenv("DB_PORT") +
 		")/" +
-		os.Getenv("DB_NAME")
+		os.Getenv("MYSQL_DATABASE")
 	DB, err = sql.Open("mysql", mysqlInfo)
 	if err != nil {
 		log.Fatal(err, " ### utils.ConnectDatabase Step_1")
