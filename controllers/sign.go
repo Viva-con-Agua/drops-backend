@@ -42,10 +42,12 @@ func SignUp(c echo.Context) (err error) {
 	}
 	//TODO iRobert Request CrmUser
 	crm_user := body.CrmUserSignUp(*user_uuid, *access_token)
+	crm_data_body := new(models.CrmDataBody)
 	crm_event := crm_user.CrmData
 	crm_event.Activity = "EVENT_JOIN"
+	crm_data_body.CrmData = crm_event
 	crm.IrobertCreateUser(crm_user)
-	crm.IrobertJoinEvent(&crm_event)
+	crm.IrobertJoinEvent(crm_data_body)
 	api.SetSession(c, user)
 	return c.JSON(http.StatusCreated, user)
 }

@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/Viva-con-Agua/echo-pool/crm"
 )
 
@@ -41,9 +43,14 @@ type (
 		Link  string `json:"link" validate:"required"`
 	}
 	CrmUser struct {
-		Email     string `json:"email" validate:"required"`
-		FirstName string `json:"first_name" validate:"required"`
-		LastName  string `json:"last_name" validate:"required"`
+		Email         string `json:"email" validate:"required"`
+		FirstName     string `json:"first_name" validate:"required"`
+		LastName      string `json:"last_name" validate:"required"`
+		PrivacyPolicy bool   `json:"privacy_policy"`
+		Country       string `json:"country"`
+	}
+	CrmDataBody struct {
+		CrmData crm.CrmData `json:"crm_data"`
 	}
 	CrmUserSignUp struct {
 		CrmData crm.CrmData `json:"crm_data" validate:"required"`
@@ -57,10 +64,13 @@ func (signup_data *SignUp) CrmUserSignUp(drops_id string, link string) *CrmUserS
 	crm_user := new(CrmUserSignUp)
 	crm_user.CrmData.DropsId = drops_id
 	crm_user.CrmData.CampaignId = signup_data.Campaign.CampaignId
-	crm_user.CrmData.Activity = "SIGNUP"
+	crm_user.CrmData.Activity = "DROPS_USER_CREATE"
+	crm_user.CrmData.Created = time.Now().Unix()
 	crm_user.CrmUser.Email = signup_data.SignUser.Email
 	crm_user.CrmUser.FirstName = signup_data.SignUser.FirstName
 	crm_user.CrmUser.LastName = signup_data.SignUser.LastName
+	crm_user.CrmUser.PrivacyPolicy = signup_data.SignUser.PrivacyPolicy
+	crm_user.CrmUser.Country = signup_data.SignUser.Country
 	crm_user.Mail.Link = link
 	crm_user.Offset = signup_data.Offset
 	return crm_user

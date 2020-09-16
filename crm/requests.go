@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/Viva-con-Agua/echo-pool/api"
-	"github.com/Viva-con-Agua/echo-pool/crm"
 )
 
 func IrobertCreateUser(u_crm *models.CrmUserSignUp) (err error) {
@@ -40,7 +39,7 @@ func IrobertCreateUser(u_crm *models.CrmUserSignUp) (err error) {
 	return api.ErrorConflict
 }
 
-func IrobertJoinEvent(u_crm *crm.CrmData) (err error) {
+func IrobertJoinEvent(u_crm *models.CrmDataBody) (err error) {
 	reqBodyBytes := new(bytes.Buffer)
 	json.NewEncoder(reqBodyBytes).Encode(u_crm)
 	req, err := http.NewRequest("POST",
@@ -65,5 +64,5 @@ func IrobertJoinEvent(u_crm *crm.CrmData) (err error) {
 	if resp.StatusCode == 201 {
 		return nil
 	}
-	return api.ErrorConflict
+	return err
 }
