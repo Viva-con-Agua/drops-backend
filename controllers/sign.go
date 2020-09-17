@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"drops-backend/crm"
 	"drops-backend/database"
 	"drops-backend/models"
 	"drops-backend/utils"
@@ -24,7 +23,7 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, api.JsonErrorResponse(err))
 	}
 	// insert body into database
-	user_uuid, access_token, err_api := database.SignUp(body)
+	user_uuid, _, err_api := database.SignUp(body)
 	if err_api.Error != nil {
 
 		err_api.LogError(c, body)
@@ -40,14 +39,8 @@ func SignUp(c echo.Context) (err error) {
 		err_api.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
+	log.Print(user)
 	//TODO iRobert Request CrmUser
-	crm_user := body.CrmUserSignUp(*user_uuid, *access_token)
-	crm_data_body := new(models.CrmDataBody)
-	crm_event := crm_user.CrmData
-	crm_event.Activity = "EVENT_JOIN"
-	crm_data_body.CrmData = crm_event
-	crm.IrobertCreateUser(crm_user)
-	crm.IrobertJoinEvent(crm_data_body)
 	api.SetSession(c, user)
 	return c.JSON(http.StatusCreated, user)
 }
