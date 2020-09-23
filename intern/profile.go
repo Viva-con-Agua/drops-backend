@@ -21,7 +21,6 @@ func ProfileGetRequest(u_uuid string) (p *models.Profile, err error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	log.Print(resp.Body)
 	//var a []auth.User
 
 	// Try to decode the request body into the struct. If there is an error,
@@ -48,7 +47,6 @@ func ProfileCreateRequest(users *models.ProfileCreate) (p *models.Profile, err e
 		return nil, err
 	}
 	defer resp.Body.Close()
-	log.Print(resp)
 	//var a []auth.User
 
 	// Try to decode the request body into the struct. If there is an error,

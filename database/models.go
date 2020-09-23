@@ -17,7 +17,6 @@ func ModelCreate(m_create *api.ModelCreate) (m *api.Model, ap_err *api.ApiError)
 		tx.Rollback()
 		return nil, api.GetError(err)
 	}
-	log.Print(m_create)
 	// select drops_user database id as u_id
 	query := "SELECT id FROM drops_user WHERE uuid = ? LIMIT 1"
 	var u_id int64
@@ -39,7 +38,6 @@ func ModelCreate(m_create *api.ModelCreate) (m *api.Model, ap_err *api.ApiError)
 		tx.Rollback()
 		return nil, api.GetError(err)
 	}
-	log.Print(m_id)
 	query = "INSERT INTO access " +
 		"(uuid, service, updated, created, drops_user_id, model_id)" +
 		" VALUES(?, ?, ?, ?, ?, ?)"
@@ -49,7 +47,6 @@ func ModelCreate(m_create *api.ModelCreate) (m *api.Model, ap_err *api.ApiError)
 		return nil, api.GetError(err)
 	}
 	a_id, err := res.LastInsertId()
-	log.Print(a_id)
 	if err != nil {
 		tx.Rollback()
 		return nil, api.GetError(err)

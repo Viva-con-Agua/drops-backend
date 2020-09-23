@@ -39,8 +39,6 @@ func SignUp(c echo.Context) (err error) {
 		err_api.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
-	log.Print(user)
-	//TODO iRobert Request CrmUser
 	api.SetSession(c, user)
 	return c.JSON(http.StatusCreated, user)
 }
