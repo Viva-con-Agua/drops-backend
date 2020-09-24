@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"drops-backend/crm"
 	"drops-backend/database"
 	"drops-backend/models"
 	"drops-backend/utils"
@@ -82,6 +83,7 @@ func SignUpToken(c echo.Context) (err error) {
 		api_err.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
+	err = crm.IrobertSendMail(access_token)
 	log.Print(*access_token)
 	//TODO CRM Request new Token for Signup
 	return c.JSON(http.StatusCreated, api.RespCreated())

@@ -35,7 +35,8 @@ type (
 		RedirectUrl string   `json:"redirect_url" validate:"required"`
 	}
 	NewToken struct {
-		Email string `json:"email" validate:"required"`
+		Campaign Campaign `json:"campaign" validate:"required"`
+		Email    string   `json:"email" validate:"required"`
 	}
 
 	Mail struct {
@@ -75,4 +76,12 @@ func (signup_data *SignUp) CrmUserSignUp(drops_id string, link string) *CrmUserS
 	crm_user.Offset = signup_data.Offset
 	return crm_user
 
+}
+
+func (nt *NewToken) CrmEmailBody(a string) *crm.CrmEmailBody {
+	ce := new(crm.CrmEmailBody)
+	ce.CrmData.CampaignId = nt.Campaign.CampaignId
+	ce.CrmData.Activity = a
+	ce.Mail.Email = nt.Email
+	return ce
 }

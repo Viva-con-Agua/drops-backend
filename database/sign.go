@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Viva-con-Agua/echo-pool/api"
+	crmm "github.com/Viva-con-Agua/echo-pool/crm"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -199,12 +200,13 @@ func ConfirmSignUp(t string) (u_uuid *string, api_err *api.ApiError) {
 
 //TODO ResetPassword
 
-func SignUpToken(n *models.NewToken) (t *string, ap_err *api.ApiError) {
-	query := "SELECT drops_user.id FROM drops_user " +
+func SignUpToken(n *models.NewToken) (crm_email *crmm.CrmEmailBody, app_err *api.ApiError) {
+	ce := n.CrmEmailBody("SIGNUP_CONFIRM")
+	query := "SELECT drops_user.id, drops_user.uuid, drops_user.country FROM drops_user " +
 		"WHERE drops_user.email = ? && drops_user.confirmed = 0 " +
 		"LIMIT 1"
 	var u_id int64
-	err := utils.DB.QueryRow(query, n.Email).Scan(&u_id)
+	err := utils.DB.QueryRow(query, n.Email).Scan(&u_id, &ce.CrmData.DropsId, &ce.CrmData.Country)
 	if err != nil {
 		return nil, api.GetError(err)
 	}
@@ -229,7 +231,9 @@ func SignUpToken(n *models.NewToken) (t *string, ap_err *api.ApiError) {
 		tx.Rollback()
 		return nil, api.GetError(err)
 	}
-	return &access_token, api.GetError(tx.Commit())
+	ce.Mail.Link = access_token
+	ce.CrmData.Created = time.Now().Unix()
+	return ce, api.GetError(tx.Commit())
 }
 
 func GetSessionUser(user_uuid *string) (user *api.UserSession, err_api *api.ApiError) {
