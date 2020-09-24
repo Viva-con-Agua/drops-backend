@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Viva-con-Agua/echo-pool/api"
@@ -39,6 +40,9 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 	)
 	if err != nil {
 		tx.Rollback()
+		if strings.Contains(err, "Duplicate entry") {
+			return nil, nil, api.GetError(api.ErrorConflict)
+		}
 		return nil, nil, api.GetError(err)
 	}
 	// get user id via LastInsertId
@@ -324,6 +328,9 @@ func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
 	profile := new(models.Profile)
 	rows, err := utils.DB.Query(query, s_in.Email)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return nil, api.GetError(utils.ErrorUserNotFound)
+		}
 		return nil, api.GetError(err)
 	}
 	for rows.Next() {
@@ -352,6 +359,9 @@ func SignIn(s_in *models.SignIn) (user *api.UserSession, ap_err *api.ApiError) {
 			&password)
 		if err != nil {
 			return nil, api.GetError(err)
+		}
+		if user.Confirmed == false {
+			return nil, api.GetError(utils.ErrorUserNotConfirmed)
 		}
 		//password check
 		err = bcrypt.CompareHashAndPassword(password, []byte(s_in.Password))

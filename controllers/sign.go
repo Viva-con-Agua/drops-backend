@@ -23,14 +23,12 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, api.JsonErrorResponse(err))
 	}
 	// insert body into database
-	user_uuid, _, err_api := database.SignUp(body)
-	if err_api.Error != nil {
-
-		err_api.LogError(c, body)
-		if strings.Contains(err_api.Error.Error(), "Duplicate entry") {
+	user_uuid, _, api_err := database.SignUp(body)
+	if api_err.Error != nil {
+		if api_err.Error == api.ErrorConflict {
 			return c.JSON(http.StatusConflict, api.RespConflict("email", body.SignUser.Email))
 		}
-		err_api.LogError(c, body)
+		api_err.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
 	//signin user
@@ -100,14 +98,14 @@ func SignIn(c echo.Context) (err error) {
 	user, api_err := database.SignIn(body)
 	if api_err.Error != nil {
 		if api_err.Error == api.ErrorPassword {
-			return c.JSON(http.StatusUnauthorized, api.RespCustom("No valid email or password", nil, nil))
-		}
-		if strings.Contains(api_err.Error.Error(), "no rows in result set") {
-			return c.JSON(http.StatusBadRequest, api.RespNoContent("email", body.Email))
+			return c.JSON(http.StatusUnauthorized, api.RespCustom("password_false", nil, nil))
 		}
 		if api_err.Error == utils.ErrorUserNotFound {
 			key := "email"
-			return c.JSON(http.StatusBadRequest, api.RespCustom("no user with given email", &key, body.Email))
+			return c.JSON(http.StatusUnauthorized, api.RespCustom("email_false", &key, body.Email))
+		}
+		if api_err.Error == utils.ErrorUserNotConfirmed {
+			return c.JSON(http.StatusUnauthorized, api.RespCustom("confirmed_false", nil, nil))
 		}
 		api_err.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
