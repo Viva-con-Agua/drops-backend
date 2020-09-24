@@ -199,24 +199,25 @@ func ConfirmSignUp(t string) (u_uuid *string, api_err *api.ApiError) {
 
 //TODO ResetPassword
 
-func SignUpToken(n *models.NewToken) (t *string, ap_err *api.ApiError) {
-	query := "SELECT drops_user.id FROM drops_user " +
+func SignUpToken(n *models.NewToken) (t *string, u *string, ap_err *api.ApiError) {
+	query := "SELECT drops_user.id, drops_user.uuid FROM drops_user " +
 		"WHERE drops_user.email = ? && drops_user.confirmed = 0 " +
 		"LIMIT 1"
 	var u_id int64
-	err := utils.DB.QueryRow(query, n.Email).Scan(&u_id)
+	var u_uuid string
+	err := utils.DB.QueryRow(query, n.Email).Scan(&u_id, &u_uuid)
 	if err != nil {
-		return nil, api.GetError(err)
+		return nil, nil, api.GetError(err)
 	}
 	tx, err := utils.DB.Begin()
 	if err != nil {
 		log.Print("Database Error: ", err)
-		return nil, api.GetError(err)
+		return nil, nil, api.GetError(err)
 	}
 	access_token, err := utils.RandomBase64(32)
 	if err != nil {
 		tx.Rollback()
-		return nil, api.GetError(err)
+		return nil, nil, api.GetError(err)
 	}
 	_, err = tx.Exec(
 		"UPDATE access_token SET token = ?, expired = ?, created = ? WHERE t_case = 'signup' AND drops_user_id = ?",
@@ -227,9 +228,9 @@ func SignUpToken(n *models.NewToken) (t *string, ap_err *api.ApiError) {
 	)
 	if err != nil {
 		tx.Rollback()
-		return nil, api.GetError(err)
+		return nil, nil, api.GetError(err)
 	}
-	return &access_token, api.GetError(tx.Commit())
+	return &access_token, &u_uuid, api.GetError(tx.Commit())
 }
 
 func GetSessionUser(user_uuid *string) (user *api.UserSession, err_api *api.ApiError) {

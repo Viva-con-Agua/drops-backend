@@ -74,7 +74,7 @@ func SignUpToken(c echo.Context) (err error) {
 	if err = c.Validate(body); err != nil {
 		return c.JSON(http.StatusBadRequest, api.JsonErrorResponse(err))
 	}
-	access_token, api_err := database.SignUpToken(body)
+	access_token, u_uuid, api_err := database.SignUpToken(body)
 	if api_err.Error != nil {
 		if api_err.Error == api.ErrorNotFound {
 			return c.JSON(http.StatusNotFound, api.RespNoContent("email", body.Email))
@@ -83,6 +83,7 @@ func SignUpToken(c echo.Context) (err error) {
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
 	log.Print(*access_token)
+
 	//TODO CRM Request new Token for Signup
 	return c.JSON(http.StatusCreated, api.RespCreated())
 }
