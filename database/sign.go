@@ -40,7 +40,7 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 	)
 	if err != nil {
 		tx.Rollback()
-		if strings.Contains(err, "Duplicate entry") {
+		if strings.Contains(err.Error(), "Duplicate entry") {
 			return nil, nil, api.GetError(api.ErrorConflict)
 		}
 		return nil, nil, api.GetError(err)
