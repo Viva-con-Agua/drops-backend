@@ -1,6 +1,0 @@
-db:
-  host: 172.2.200.1
-  user: drops
-  password: drops
-  port: 3306
-  name: drops

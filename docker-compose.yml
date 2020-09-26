@@ -2,39 +2,38 @@ version: '3'
 
 services:
   
-  drops-backend:
-    image: vivaconagua/drops-backend:latest
+  app:
     build: .
-    container_name: drops-backend
     restart: unless-stopped
+    volumes:
+        - ${REPO_CONFIG_PATH}/drops-backend/prod.env:/go/src/drops-backend/.env
+    links:
+        - db:db
+    environment:
+        - ALLOW_ORIGINS=${ALLOW_ORIGINS}
+        - COOKIE_SECURE=${COOKIE_SECURE}
+        - SAME_SITE=${SAME_SITE}
     networks:
-      default:
-        ipv4_address: 172.2.100.1
+      app_net:
+          aliases:
+              - drops-backend
+      db_net:
 
-  drops-database:
-     image: mariadb
-     container_name: drops-database
-     environment: 
-      - MYSQL_DATABASE=drops 
-      - MYSQL_USER=drops
-      - MYSQL_PASSWORD=drops 
-      - MYSQL_ROOT_PASSWORD=yes 
+  db:
+     image: mysql
+     env_file: 
+        - ${REPO_CONFIG_PATH}/drops-backend/prod.env
      restart: unless-stopped
      volumes: 
-       - ./volumes/drops-database/mysql/:/var/lib/mysql/
+        - ${VOLUME_PATH}/drops-backend/mysql/:/var/lib/mysql/
+        - ${REPO_CONFIG_PATH}/drops-backend/db/:/docker-entrypoint-initdb.d/
      networks:
-       default:
-         ipv4_address: 172.2.200.1
-
-  redis:
-    image: redis
-    container_name: redis
-    restart: unless-stopped
-    networks:
-      default:
-        ipv4_address: 172.2.150.1
+       db_net:
 
 networks:
-  default:
+  app_net:
     external:
-      name: pool-network
+        name: api-deploy_app
+  db_net:
+    external:
+        name: api-deploy_db

@@ -3,6 +3,6 @@ package utils
 import "errors"
 
 var (
-	ErrorNotFound = errors.New("NotFound")
-	ErrorConflict = errors.New("Conflict")
+	ErrorUserNotFound     = errors.New("user not found")
+	ErrorUserNotConfirmed = errors.New("user not confirmed")
 )
