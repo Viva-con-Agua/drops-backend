@@ -7,6 +7,7 @@ import (
 	"drops-backend/utils"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/Viva-con-Agua/echo-pool/api"
@@ -75,7 +76,7 @@ func SignUpToken(c echo.Context) (err error) {
 	if err = c.Validate(body); err != nil {
 		return c.JSON(http.StatusBadRequest, api.JsonErrorResponse(err))
 	}
-	access_token, api_err := database.SignUpToken(body)
+	crm_email, api_err := database.SignUpToken(body)
 	if api_err.Error != nil {
 		if api_err.Error == api.ErrorNotFound {
 			return c.JSON(http.StatusNotFound, api.RespNoContent("email", body.Email))
@@ -83,8 +84,11 @@ func SignUpToken(c echo.Context) (err error) {
 		api_err.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
-	err = crm.IrobertSendMail(access_token)
-	log.Print(*access_token)
+	if os.Getenv("CRM_SIGNUP") != "false" {
+		err = crm.IrobertSendMail(crm_email)
+	} else {
+		log.Print(crm_email)
+	}
 	//TODO CRM Request new Token for Signup
 	return c.JSON(http.StatusCreated, api.RespCreated())
 }

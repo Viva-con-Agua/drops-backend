@@ -126,13 +126,12 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 		tx.Rollback()
 		return nil, nil, api.GetError(err)
 	}
-
+	crm_user := s.CrmUserSignUp(u_uuid, token)
+	crm_data_body := new(models.CrmDataBody)
+	crm_event := crm_user.CrmData
+	crm_event.Activity = "EVENT_JOIN"
+	crm_data_body.CrmData = crm_event
 	if os.Getenv("CRM_SIGNUP") != "false" {
-		crm_user := s.CrmUserSignUp(u_uuid, token)
-		crm_data_body := new(models.CrmDataBody)
-		crm_event := crm_user.CrmData
-		crm_event.Activity = "EVENT_JOIN"
-		crm_data_body.CrmData = crm_event
 		err = crm.IrobertCreateUser(crm_user)
 		if err != nil {
 			tx.Rollback()
@@ -144,7 +143,10 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 			tx.Rollback()
 			return nil, nil, api.GetError(err)
 		}
+	} else {
+		log.Print(crm_user)
 	}
+
 	// insert profile
 	return &u_uuid, &token, api.GetError(tx.Commit())
 }
