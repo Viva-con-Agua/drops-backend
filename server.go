@@ -59,6 +59,8 @@ func main() {
 	// "/v1/users"
 	users := apiV1.Group("/users")
 	users.Use(api.SessionAuth)
+	users.POST("/password", controllers.PasswordResetToken)
+	users.PUT("/password", controllers.PasswordReset)
 	users.DELETE("", controllers.UserDelete)
 
 	// "/v1/access"

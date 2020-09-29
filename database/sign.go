@@ -217,14 +217,14 @@ func SignUpToken(n *models.NewToken) (crm_email *crmm.CrmEmailBody, app_err *api
 		log.Print("Database Error: ", err)
 		return nil, api.GetError(err)
 	}
-	access_token, err := utils.RandomBase64(32)
+	token, err := utils.RandomBase64(32)
 	if err != nil {
 		tx.Rollback()
 		return nil, api.GetError(err)
 	}
 	_, err = tx.Exec(
 		"UPDATE access_token SET token = ?, expired = ?, created = ? WHERE t_case = 'signup' AND drops_user_id = ?",
-		access_token,
+		token,
 		time.Now().Add(time.Hour*24).Unix(),
 		time.Now().Unix(),
 		u_id,
@@ -233,7 +233,7 @@ func SignUpToken(n *models.NewToken) (crm_email *crmm.CrmEmailBody, app_err *api
 		tx.Rollback()
 		return nil, api.GetError(err)
 	}
-	ce.Mail.Link = access_token
+	ce.Mail.Link = token
 	ce.CrmData.Created = time.Now().Unix()
 	return ce, api.GetError(tx.Commit())
 }
