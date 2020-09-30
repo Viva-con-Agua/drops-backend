@@ -2,6 +2,7 @@ package main
 
 import (
 	"drops-backend/controllers"
+	"drops-backend/intern"
 	"drops-backend/nats"
 	"drops-backend/utils"
 	"log"
@@ -45,8 +46,11 @@ func main() {
 	e.Use(store)
 	e.Validator = &CustomValidator{validator: validator.New()}
 
-	apiV1 := e.Group("/v1")
+	inta := e.Group("/intern")
+	pi := inta.Group("/profile")
+	pi.POST("", intern.ProfileListInternal)
 
+	apiV1 := e.Group("/v1")
 	// "/v1/auth"
 	a := apiV1.Group("/auth")
 	a.POST("/signup", controllers.SignUp)
@@ -55,6 +59,8 @@ func main() {
 	a.POST("/signup/token", controllers.SignUpToken)
 	a.GET("/current", controllers.Current)
 	a.GET("/signout", controllers.SignOut)
+	a.POST("/password", controllers.PasswordResetToken)
+	a.PUT("/password", controllers.PasswordReset)
 
 	// "/v1/users"
 	users := apiV1.Group("/users")

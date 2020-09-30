@@ -214,7 +214,6 @@ func SignUpToken(n *models.NewToken) (crm_email *crmm.CrmEmailBody, app_err *api
 	}
 	tx, err := utils.DB.Begin()
 	if err != nil {
-		log.Print("Database Error: ", err)
 		return nil, api.GetError(err)
 	}
 	token, err := utils.RandomBase64(32)

@@ -2,7 +2,9 @@ package models
 
 import (
 	//	"database/sql"
+
 	"strconv"
+	"strings"
 )
 
 type (
@@ -41,7 +43,23 @@ type (
 	FilterProfile struct {
 		Email string
 	}
+	ListRequest struct {
+		UuidList []string `json:"uuid_list" validate:"required"`
+	}
 )
+
+func (l *ListRequest) Filter() string {
+	if l.UuidList != nil {
+		filter := "WHERE "
+		for _, val := range l.UuidList {
+			filter = filter + "du.uuid = '" + val + "' OR "
+		}
+		filter = strings.TrimSuffix(filter, "OR ")
+		return filter
+	} else {
+		return ""
+	}
+}
 
 func (q *QueryProfile) Defaults() {
 	if q.Offset == "" {
