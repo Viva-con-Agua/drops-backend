@@ -2,13 +2,32 @@ package intern
 
 import (
 	"bytes"
+	"drops-backend/database"
 	"drops-backend/models"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/Viva-con-Agua/echo-pool/resp"
+	"github.com/labstack/echo"
 )
+
+func ProfileListInternal(c echo.Context) (err error) {
+	body := new(models.ListRequest)
+	if err = c.Bind(body); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	filter := body.Filter()
+	response, api_err := database.ProfileListInternal(filter)
+	if api_err.Error != nil {
+
+		api_err.LogError(c, body)
+		return c.JSON(http.StatusInternalServerError, resp.InternelServerError)
+	}
+	return c.JSON(http.StatusOK, response)
+}
 
 func ProfileGetRequest(u_uuid string) (p *models.Profile, err error) {
 	req, err := http.NewRequest("GET", "http://"+os.Getenv("PROFILE_HOST")+"/intern/profiles/user/"+u_uuid, nil)

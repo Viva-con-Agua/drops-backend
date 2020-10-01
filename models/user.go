@@ -31,6 +31,10 @@ type (
 	UserListFilter struct {
 		UserList []string `json:"user_list" validate:"required"`
 	}
+	PasswordReset struct {
+		Token    string `json:"token" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}
 )
 
 func (q *UserQuery) Page() *Page {
