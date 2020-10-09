@@ -1,12 +1,10 @@
 package database
 
 import (
-	"drops-backend/crm"
 	"drops-backend/models"
 	"drops-backend/utils"
 	"encoding/json"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -125,26 +123,6 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 	if err != nil {
 		tx.Rollback()
 		return nil, nil, api.GetError(err)
-	}
-	crm_user := s.CrmUserSignUp(u_uuid, token)
-	crm_data_body := new(models.CrmDataBody)
-	crm_event := crm_user.CrmData
-	crm_event.Activity = "EVENT_JOIN"
-	crm_data_body.CrmData = crm_event
-	if os.Getenv("CRM_SIGNUP") != "false" {
-		err = crm.IrobertCreateUser(crm_user)
-		if err != nil {
-			tx.Rollback()
-			return nil, nil, api.GetError(err)
-		}
-
-		err = crm.IrobertJoinEvent(crm_data_body)
-		if err != nil {
-			tx.Rollback()
-			return nil, nil, api.GetError(err)
-		}
-	} else {
-		log.Print(crm_user)
 	}
 
 	// insert profile
