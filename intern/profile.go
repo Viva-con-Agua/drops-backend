@@ -11,7 +11,7 @@ import (
 	"os"
 
 	"github.com/Viva-con-Agua/echo-pool/resp"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func ProfileListInternal(c echo.Context) (err error) {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/Viva-con-Agua/echo-pool/api"
 	"github.com/Viva-con-Agua/echo-pool/resp"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 /**

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/Viva-con-Agua/echo-pool/api"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func SignUp(c echo.Context) (err error) {
@@ -25,7 +25,7 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, api.JsonErrorResponse(err))
 	}
 	// insert body into database
-	user_uuid, _, api_err := database.SignUp(body)
+	u_uuid, token, api_err := database.SignUp(body)
 	if api_err.Error != nil {
 		if api_err.Error == api.ErrorConflict {
 			return c.JSON(http.StatusConflict, api.RespConflict("email", body.SignUser.Email))
@@ -34,10 +34,27 @@ func SignUp(c echo.Context) (err error) {
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
 	}
 	//signin user
-	user, err_api := database.GetSessionUser(user_uuid)
+	user, err_api := database.GetSessionUser(u_uuid)
 	if err_api.Error != nil {
 		err_api.LogError(c, body)
 		return c.JSON(http.StatusInternalServerError, api.RespInternelServerError())
+	}
+	crm_user := body.CrmUserSignUp(*u_uuid, *token)
+	crm_data_body := new(models.CrmDataBody)
+	crm_event := crm_user.CrmData
+	crm_event.Activity = "EVENT_JOIN"
+	crm_data_body.CrmData = crm_event
+	if os.Getenv("CRM_SIGNUP") != "false" {
+		err = crm.IrobertCreateUser(crm_user)
+		if err != nil {
+			api.GetError(err).LogError(c, body)
+		}
+		err = crm.IrobertJoinEvent(crm_data_body)
+		if err != nil {
+			api.GetError(err).LogError(c, body)
+		}
+	} else {
+		log.Print(crm_user)
 	}
 	api.SetSession(c, user)
 	return c.JSON(http.StatusCreated, user)

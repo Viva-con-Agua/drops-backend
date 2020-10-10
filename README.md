@@ -1,5 +1,5 @@
 # drops-backend
-drops implementation with go and echo
+drops implementation with go and echo. Can handle Users.
 
 ## use
 install docker-compose
