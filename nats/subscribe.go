@@ -1,13 +1,6 @@
 package nats
 
-import (
-	"drops-backend/database"
-	"drops-backend/models"
-	"log"
-
-	"github.com/Viva-con-Agua/echo-pool/api"
-)
-
+/*
 func SubscribeAddModel() {
 	_, err := Nats.Subscribe("drops.model.add", func(a *api.ModelCreate) {
 		_, api_err := database.ModelCreate(a)
@@ -44,4 +37,4 @@ func SubscribeAccessDelete() {
 		log.Print("Nats Error: ", err)
 	}
 
-}
+}*/

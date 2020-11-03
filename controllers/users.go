@@ -1,5 +1,6 @@
 package controllers
 
+/*
 import (
 	"log"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 	"github.com/Viva-con-Agua/echo-pool/api"
 	"github.com/Viva-con-Agua/echo-pool/resp"
 	"github.com/labstack/echo/v4"
-)
+)*/
 
 /**
  * "GET /users"
@@ -22,7 +23,7 @@ import (
  * "DELETE /users"
  * response uuid of deleted models.User
  */
-func UserDelete(c echo.Context) (err error) {
+/*func UserDelete(c echo.Context) (err error) {
 	// create body as models.User
 	body := new(models.DeleteBody)
 	// save data to body
@@ -88,4 +89,4 @@ func PasswordReset(c echo.Context) (err error) {
 	key := "u_uuid"
 	//TODO CRM Request new Token for Signup
 	return c.JSON(http.StatusOK, api.RespCustom("password_updated", &key, *u_uuid))
-}
+}*/

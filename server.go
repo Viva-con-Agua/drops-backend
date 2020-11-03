@@ -2,64 +2,41 @@ package main
 
 import (
 	"drops-backend/controllers"
-	"drops-backend/intern"
 	"drops-backend/nats"
 	"drops-backend/utils"
 	"log"
 	"os"
 	"strings"
 
-	"github.com/Viva-con-Agua/echo-pool/api"
+	"github.com/Viva-con-Agua/vcago"
 	"github.com/go-playground/validator"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
-
-type (
-	CustomValidator struct {
-		validator *validator.Validate
-	}
-)
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
-}
 
 func main() {
 
 	// intial loading function
 	godotenv.Load()
 	log.Print(strings.Split(os.Getenv("ALLOW_ORIGINS"), ","))
-	utils.ConnectDatabase()
-	store := api.RedisSession()
+	utils.ConnectMongoDB()
 	nats.Connect()
-	nats.SubscribeAddModel()
+	//nats.SubscribeAddModel()
 	//create echo server
 	e := echo.New()
-	m := middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     strings.Split(os.Getenv("ALLOW_ORIGINS"), ","),
-		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-		AllowCredentials: true,
-	})
-	e.Use(m)
-	e.Use(store)
-	e.Validator = &CustomValidator{validator: validator.New()}
-
-	inta := e.Group("/intern")
-	pi := inta.Group("/profile")
-	pi.POST("", intern.ProfileListInternal)
-
+	e.Use(vcago.CORSConfig)
+	e.Use(vcago.SessionRedisStore())
+	e.Validator = &vcago.VcaValidator{Validator: validator.New()}
 	apiV1 := e.Group("/v1")
 	// "/v1/auth"
 	a := apiV1.Group("/auth")
 	a.POST("/signup", controllers.SignUp)
-	a.GET("/signup/confirm/:token", controllers.ConfirmSignUp)
+	//a.GET("/signup/confirm/:token", controllers.ConfirmSignUp)
 	a.POST("/signin", controllers.SignIn)
-	a.POST("/signup/token", controllers.SignUpToken)
-	a.GET("/current", controllers.Current)
-	a.GET("/signout", controllers.SignOut)
-	a.POST("/password", controllers.PasswordResetToken)
+	//a.POST("/signup/token", controllers.SignUpToken)
+	//a.GET("/current", controllers.Current)
+	//a.GET("/signout", controllers.SignOut)
+	/*a.POST("/password", controllers.PasswordResetToken)
 	a.PUT("/password", controllers.PasswordReset)
 
 	// "/v1/users"
@@ -87,7 +64,7 @@ func main() {
 
 	// "v1/models"
 	apiAdmin.POST("/models", controllers.ModelCreate)
-	apiAdmin.DELETE("/models", controllers.ModelDelete)
+	apiAdmin.DELETE("/models", controllers.ModelDelete)*/
 
 	//internal routes for microservices
 	//intern := e.Group("/intern")

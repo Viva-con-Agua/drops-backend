@@ -5,6 +5,8 @@ import (
 
 	"strconv"
 	"strings"
+
+	"github.com/Viva-con-Agua/vcago/vmod"
 )
 
 type (
@@ -46,7 +48,34 @@ type (
 	ListRequest struct {
 		UuidList []string `json:"uuid_list" validate:"required"`
 	}
+	ProfileDB struct {
+		ID          string        `bson:"_id" json:"profile_id" validate:"required"`
+		UserID      string        `bson:"user_id" json:"user_id" validate:"required"`
+		FirstName   string        `bson:"first_name" json:"first_name" validate:"required"`
+		LastName    string        `bson:"last_name" json:"last_name" validate:"required"`
+		FullName    string        `bson:"full_name" json:"full_name" validate:"required"`
+		DisplayName string        `bson:"display_name" json:"display_name" validate:"required"`
+		Gender      string        `bson:"gender" json:"gender"`
+		Country     string        `bson:"country" json:"country"`
+		Avatar      vmod.Avatar   `bson:"avatar" json:"avatar"`
+		Modified    vmod.Modified `json:"modified" bson:"modified" validation:"required"`
+	}
 )
+
+func (p *ProfileDB) Profile() *vmod.Profile {
+	profile := new(vmod.Profile)
+	profile.ID = p.ID
+	profile.UserID = p.UserID
+	profile.FirstName = p.FirstName
+	profile.LastName = p.LastName
+	profile.FullName = p.FullName
+	profile.DisplayName = p.DisplayName
+	profile.Gender = p.Gender
+	profile.Country = p.Country
+	profile.Avatar = p.Avatar
+	profile.Modified = p.Modified
+	return profile
+}
 
 func (l *ListRequest) Filter() string {
 	if l.UuidList != nil {

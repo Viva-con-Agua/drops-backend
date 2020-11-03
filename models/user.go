@@ -1,20 +1,6 @@
 package models
 
-import (
-	"github.com/Viva-con-Agua/echo-pool/api"
-)
-
 type (
-	User struct {
-		Uuid       string         `json:"uuid"`
-		Email      string         `json:"email"`
-		Confirmed  int            `json:"confirmed"`
-		Access     api.AccessList `json:"access"`
-		Profile    Profile        `json:"profile"`
-		Updated    int64          `json:"updated"`
-		Created    int64          `json:"created"`
-		Additional api.Additional `json:"additional"`
-	}
 	UserQuery struct {
 		Offset      int    `query:"offset" default:"0"`
 		Count       int    `query:"count" default:"40"`
@@ -30,10 +16,6 @@ type (
 	}
 	UserListFilter struct {
 		UserList []string `json:"user_list" validate:"required"`
-	}
-	PasswordReset struct {
-		Token    string `json:"token" validate:"required"`
-		Password string `json:"password" validate:"required"`
 	}
 )
 
