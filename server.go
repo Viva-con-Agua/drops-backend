@@ -2,13 +2,14 @@ package main
 
 import (
 	"drops-backend/controllers"
+	"drops-backend/dao"
 	"drops-backend/nats"
-	"drops-backend/utils"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/Viva-con-Agua/vcago"
+	"github.com/Viva-con-Agua/vcago/verr"
 	"github.com/go-playground/validator"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -19,14 +20,14 @@ func main() {
 	// intial loading function
 	godotenv.Load()
 	log.Print(strings.Split(os.Getenv("ALLOW_ORIGINS"), ","))
-	utils.ConnectMongoDB()
+	dao.Connect()
 	nats.Connect()
 	//nats.SubscribeAddModel()
 	//create echo server
 	e := echo.New()
 	e.Use(vcago.CORSConfig)
 	e.Use(vcago.SessionRedisStore())
-	e.Validator = &vcago.VcaValidator{Validator: validator.New()}
+	e.Validator = &verr.JSONValidator{Validator: validator.New()}
 	apiV1 := e.Group("/v1")
 	// "/v1/auth"
 	a := apiV1.Group("/auth")
@@ -34,8 +35,8 @@ func main() {
 	//a.GET("/signup/confirm/:token", controllers.ConfirmSignUp)
 	a.POST("/signin", controllers.SignIn)
 	//a.POST("/signup/token", controllers.SignUpToken)
-	//a.GET("/current", controllers.Current)
-	//a.GET("/signout", controllers.SignOut)
+	a.GET("/current", controllers.Current)
+	a.GET("/signout", controllers.SignOut)
 	/*a.POST("/password", controllers.PasswordResetToken)
 	a.PUT("/password", controllers.PasswordReset)
 

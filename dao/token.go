@@ -2,16 +2,16 @@ package dao
 
 import (
 	"context"
-	"drops-backend/utils"
 
 	"github.com/Viva-con-Agua/vcago/verr"
 	"github.com/Viva-con-Agua/vcago/vmod"
 )
 
-func TokenInsertOne(ctx context.Context, t *vmod.Token) (api_err *verr.ApiError) {
-	token_col := utils.Database.Collection("token")
-	if _, err := token_col.InsertOne(ctx, t); err != nil {
-		return verr.GetApiError(err, &verr.RespErrorInternalServer)
+//TokenInsertOne inserts token model into database
+func TokenInsertOne(ctx context.Context, t *vmod.Token) (api_err *verr.APIError) {
+	coll := DB.Collection("token")
+	if _, err := coll.InsertOne(ctx, t); err != nil {
+		return verr.NewAPIError(err).InternalServerError()
 	}
 	return nil
 }

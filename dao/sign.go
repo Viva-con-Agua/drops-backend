@@ -10,65 +10,75 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func SignUp(s *models.SignUp) (user *vmod.User, api_err *verr.ApiError) {
-
+//SignUp is a mongodb controller that manages the SignUp database process.
+func SignUp(s *models.SignUp) (r *models.SignUpReturn, apiErr *verr.APIError) {
+	r = new(models.SignUpReturn)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c_time := time.Now().Unix()
+	cTime := time.Now().Unix()
 
-	user = s.SignUser.NewUser(c_time)
-	if api_err := UserInsertOne(ctx, user); api_err != nil {
-		return nil, api_err
+	user := s.SignUser.User(cTime)
+	if apiErr := UserInsertOne(ctx, user); apiErr != nil {
+		return nil, apiErr
 	}
 
-	profile := s.SignUser.NewProfile(c_time, user.ID)
-	if api_err := ProfileInsertOne(ctx, profile); api_err != nil {
-		return nil, api_err
+	profile := s.SignUser.Profile(cTime, user.ID)
+	if apiErr := ProfileInsertOne(ctx, profile); apiErr != nil {
+		return nil, apiErr
 	}
 
-	if password, api_err := models.InitPassword(s.SignUser.Password, user.ID, c_time); api_err != nil {
-		return nil, api_err
-	} else if api_err := PasswordInsertOne(ctx, password); api_err != nil {
-		return nil, api_err
+	if password, apiErr := models.NewPassword(s.SignUser.Password, user.ID, cTime); apiErr != nil {
+		return nil, apiErr
+	} else if apiErr := PasswordInsertOne(ctx, password); apiErr != nil {
+		return nil, apiErr
 	}
 
-	if token, api_err := vmod.InitToken("sign_up", c_time, time.Hour*24*7, user.ID); api_err != nil {
-		return nil, api_err
-	} else if api_err := TokenInsertOne(ctx, token); api_err != nil {
-		return nil, api_err
+	policies := s.SignUser.Policies(cTime, user.ID)
+	if apiErr := PoliciesInsertOne(ctx, policies); apiErr != nil {
+		return nil, apiErr
+	}
+
+	user.Policies = *policies
+	if token, apiErr := vmod.NewToken("sign_up", cTime, time.Hour*24*7, user.ID); apiErr != nil {
+		return nil, apiErr
+	} else if apiErr := TokenInsertOne(ctx, token); apiErr != nil {
+		return nil, apiErr
+	} else {
+		r.Token = *token
 	}
 
 	user.Profile = *profile
-
-	return user, verr.GetApiError(nil, nil)
+	r.User = *user
+	return r, nil
 }
 
-func SignIn(s *models.SignIn) (user *vmod.User, api_err *verr.ApiError) {
+//SignIn is a mongodb controller that manages the SignIn database process.
+func SignIn(s *models.SignIn) (user *vmod.User, apiErr *verr.APIError) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	filter := bson.M{"email": s.Email}
-	user, api_err = UserFindOne(ctx, filter)
-	if api_err != nil {
-		return nil, api_err
+	user, apiErr = UserFindOne(ctx, filter)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 	password := new(models.Password)
 	filter = bson.M{"user_id": user.ID}
-	password, api_err = PasswordFindOne(ctx, filter)
-	if api_err != nil {
-		return nil, api_err
+	password, apiErr = PasswordFindOne(ctx, filter)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 
-	api_err = password.Validate(s.Password)
-	if api_err != nil {
-		return nil, api_err
+	apiErr = password.Validate(s.Password)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 
 	filter = bson.M{"user_id": user.ID}
-	profile, api_err := ProfileFindOne(ctx, filter)
-	if api_err != nil {
-		return nil, api_err
+	profile, apiErr := ProfileFindOne(ctx, filter)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 	user.Profile = *profile
 	return user, nil
