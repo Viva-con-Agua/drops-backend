@@ -93,10 +93,10 @@ func SignIn(s *models.SignIn) (user *vmod.User, apiErr *verr.APIError) {
 	return user, nil
 }
 
-func SignUpConfirm(t string) (u *vmod.User, apiErr *verr.APIError) {
+/*func SignUpConfirm(t string) (u *vmod.User, apiErr *verr.APIError) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"code": t}
 	token, apiErr := TokenFindOne(ctx, filter)
 
-}
+}*/
