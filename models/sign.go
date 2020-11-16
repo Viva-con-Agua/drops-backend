@@ -85,7 +85,7 @@ func (u *SignUser) User(cTime int64) *vmod.User {
 	user := new(vmod.User)
 	user.ID = uuid.New().String()
 	user.Email = u.Email
-	user.Permission = *vmod.InitPermission("joined", "drops-service", modified.Created)
+	user.Permission = *vmod.NewPermission("joined", "drops-service", modified.Created)
 	if u.Service != "" && u.Service != "drops-service" {
 		user.Permission.Add("member", u.Service, modified.Created)
 	}
@@ -110,7 +110,7 @@ func (u *SignUser) Profile(cTime int64, userID string) *vmod.Profile {
 
 //Policies creates policies model for from SignUser. Contains `confiremd` and `privacy_policy` state.
 func (u *SignUser) Policies(cTime int64, userID string) *vmod.Policies {
-	policies := vmod.InitPolicies(userID, "confirmed", cTime)
+	policies := vmod.NewPolicies(userID, "confirmed", cTime)
 	policies.Add("privacy_policy", u.PrivacyPolicy, cTime)
 	return policies
 }

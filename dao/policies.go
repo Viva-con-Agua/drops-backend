@@ -36,3 +36,18 @@ func PoliciesInsertOne(ctx context.Context, i *vmod.Policies) (apiErr *verr.APIE
 	}
 	return nil
 }
+
+//PoliciesFindOne select one policies model from database
+func PoliciesFindOne(ctx context.Context, filter bson.M) (policies *vmod.Policies, apiErr *verr.APIError) {
+	var coll = DB.Collection("policies")
+	policies = new(vmod.Policies)
+	err := coll.FindOne(ctx, filter).Decode(&policies)
+	if err != nil {
+		if strings.Contains(err.Error(), "no documents in result") {
+			return nil, verr.NewAPIError(err).NotFound("policies_not_found")
+		}
+		return nil, apiErr.InternalServerError()
+	}
+	return policies, nil
+
+}

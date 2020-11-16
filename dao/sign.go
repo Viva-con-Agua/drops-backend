@@ -75,11 +75,28 @@ func SignIn(s *models.SignIn) (user *vmod.User, apiErr *verr.APIError) {
 		return nil, apiErr
 	}
 
-	filter = bson.M{"user_id": user.ID}
 	profile, apiErr := ProfileFindOne(ctx, filter)
 	if apiErr != nil {
 		return nil, apiErr
 	}
+
+	policies, apiErr := PoliciesFindOne(ctx, filter)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	apiErr = policies.Validate("confirmed")
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	user.Policies = *policies
 	user.Profile = *profile
 	return user, nil
+}
+
+func SignUpConfirm(t string) (u *vmod.User, apiErr *verr.APIError) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	filter := bson.M{"code": t}
+	token, apiErr := TokenFindOne(ctx, filter)
+
 }

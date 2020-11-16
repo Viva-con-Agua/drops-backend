@@ -1,6 +1,8 @@
 package models
 
 import (
+	"strings"
+
 	"github.com/Viva-con-Agua/vcago/verr"
 	"github.com/Viva-con-Agua/vcago/vmod"
 	"github.com/google/uuid"
@@ -48,6 +50,9 @@ func NewPassword(p string, userID string, cTime int64) (pw *Password, apiErr *ve
 func (p *Password) Validate(v string) (apiErr *verr.APIError) {
 	err := bcrypt.CompareHashAndPassword(p.Password, []byte(v))
 	if err != nil {
+		if strings.Contains(err.Error(), "is not the hash of the given password") {
+			return verr.NewAPIError(err).Forbidden("wrong_password")
+		}
 		return verr.NewAPIError(err).InternalServerError()
 	}
 	return nil
