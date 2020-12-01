@@ -26,7 +26,7 @@ func SignUp(c echo.Context) (err error) {
 	}
 	// insert body into database
 	u_uuid, token, api_err := database.SignUp(body)
-	if api_err.Error != nil {
+	if api_err != nil {
 		if api_err.Error == api.ErrorConflict {
 			return c.JSON(http.StatusConflict, api.RespConflict("email", body.SignUser.Email))
 		}
