@@ -47,6 +47,7 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 	// get user id via LastInsertId
 	u_id, err := res.LastInsertId()
 	if err != nil {
+		tx.Rollback()
 		return nil, nil, api.GetError(err)
 	}
 	res, err = tx.Exec(
@@ -124,9 +125,13 @@ func SignUp(s *models.SignUp) (user_uuid *string, access_token *string, err_api 
 		tx.Rollback()
 		return nil, nil, api.GetError(err)
 	}
-
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return nil, nil, api.GetError(err)
+	}
 	// insert profile
-	return &u_uuid, &token, api.GetError(tx.Commit())
+	return &u_uuid, &token, nil
 }
 
 func ConfirmSignUp(t string) (u_uuid *string, api_err *api.ApiError) {
