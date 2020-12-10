@@ -22,7 +22,7 @@ type (
 		Password      string `json:"password" validate:"required"`
 		FirstName     string `json:"first_name" validate:"required"`
 		LastName      string `json:"last_name" validate:"required"`
-		PrivacyPolicy bool   `json:"privacy_policy"`
+		PrivacyPolicy bool   `json:"privacy_policy" validate:"required"`
 		Country       string `json:"country"`
 		Service       string `json:"service"`
 	}

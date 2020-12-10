@@ -32,9 +32,9 @@ func main() {
 	// "/v1/auth"
 	a := apiV1.Group("/auth")
 	a.POST("/signup", controllers.SignUp)
-	//a.GET("/signup/confirm/:token", controllers.ConfirmSignUp)
+	a.GET("/signup/confirm/:code", controllers.SignUpConfirm)
 	a.POST("/signin", controllers.SignIn)
-	//a.POST("/signup/token", controllers.SignUpToken)
+	a.POST("/signup/token", controllers.NewSignUpToken)
 	a.GET("/current", controllers.Current)
 	a.GET("/signout", controllers.SignOut)
 	/*a.POST("/password", controllers.PasswordResetToken)
