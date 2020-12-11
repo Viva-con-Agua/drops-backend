@@ -37,6 +37,10 @@ func main() {
 	a.POST("/signup/token", controllers.NewSignUpToken)
 	a.GET("/current", controllers.Current)
 	a.GET("/signout", controllers.SignOut)
+
+	profiles := apiV1.Group("/profiles")
+	profiles.GET("", controllers.GetProfileList)
+
 	/*a.POST("/password", controllers.PasswordResetToken)
 	a.PUT("/password", controllers.PasswordReset)
 
