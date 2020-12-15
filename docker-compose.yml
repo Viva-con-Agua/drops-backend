@@ -26,6 +26,7 @@ services:
      restart: unless-stopped
      volumes: 
         - ${VOLUME_PATH}/drops-backend/mongo/:/etc/mongo
+        - ${VOLUME_PATH}/drops-backend/data/:/data
         - ./config/drops-backend/drops-init.js:/docker-entrypoint-initdb.d/drops-init.js:ro  
      networks:
        db_net:
