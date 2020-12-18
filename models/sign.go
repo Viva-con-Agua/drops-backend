@@ -80,7 +80,7 @@ func (nt *NewToken) CrmEmailBody(a string) *crm.CrmEmailBody {
 //User creates vmod.User from SignUser
 func (u *SignUser) User(cTime int64) *vmod.User {
 	//create password models based on bcrypt
-	modified := vmod.InitModified(cTime)
+	modified := vmod.NewModified(cTime)
 	// create bcrypt.User
 	user := new(vmod.User)
 	user.ID = uuid.New().String()
@@ -96,7 +96,7 @@ func (u *SignUser) User(cTime int64) *vmod.User {
 //Profile creates Profle model from SignUser
 func (u *SignUser) Profile(cTime int64, userID string) *vmod.Profile {
 	// create Profile
-	modified := vmod.InitModified(cTime)
+	modified := vmod.NewModified(cTime)
 	profile := new(vmod.Profile)
 	profile.ID = uuid.New().String()
 	profile.UserID = userID

@@ -25,8 +25,7 @@ services:
         - ${REPO_CONFIG_PATH}/drops-backend/prod.env
      restart: unless-stopped
      volumes: 
-        - ${VOLUME_PATH}/drops-backend/mongo/:/etc/mongo
-        - ${VOLUME_PATH}/drops-backend/data/:/data
+        - ${VOLUME_PATH}/drops-backend/data/db:/data/db
         - ./config/drops-backend/drops-init.js:/docker-entrypoint-initdb.d/drops-init.js:ro  
      networks:
        db_net:
